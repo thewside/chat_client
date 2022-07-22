@@ -1,0 +1,143 @@
+@import url('https://fonts.googleapis.com/css2?family=Roboto:wght@300&display=swap');
+$font-button: Roboto;
+$font-size-switch-button: 15px;
+$font-size-submit-button: 18px;
+$color-default: rgb(212, 109, 12);
+$color-hover: rgb(231, 130, 36);
+$color-active: rgb(145, 75, 9);
+$color-forms: rgb(191, 226, 255);
+
+.auth-container {
+  position: absolute;
+  top: 0;
+  left: 0;
+  width: 100%;
+  height: 100%;
+  display: flex;
+  flex-direction: column;
+  justify-content: center;
+  align-items: center;
+}
+.logo {
+  position: relative;
+  width: 300px;
+  height: 300px;
+  left: 0;
+}
+.form-container {
+  position: relative;
+  display: flex;
+  justify-content: center;
+  flex-direction: column;
+  background-color: rgb(49, 49, 49);
+  width: 300px;
+}
+.form {
+  display: flex;
+  flex-direction: column;
+  justify-content: center;
+  align-items: center;
+}
+
+.form-login, .form-password {
+  border: none;
+  margin: 3px;
+  padding: 10px;
+  width: 250px;
+  background-color: $color-forms;
+}
+
+.form-submit {
+  font-family: $font-button;
+  font-size: 16px;
+  border: none;
+  min-width: 270px;
+  height: 10px;
+  margin: 10px;
+  background-color: $color-default;
+  color:rgb(0, 0, 0);
+  text-decoration:none;
+  text-align: center;
+  padding-bottom: 25px;
+  padding-top: 10px;
+}
+.form-submit:hover {
+  background-color: $color-hover;
+}
+.form-submit:active {
+  background-color: $color-active;
+}
+
+.switch-container {
+  position: relative;
+  display: flex;
+  justify-content: space-around;
+  padding: 0px 15px 0px 15px;
+}
+.switch-text {
+  font-family: $font-button;
+  font-size: 14px;
+  color: rgb(167, 220, 255);
+  padding-top: 8px;
+}
+
+.switch-link {
+  font-family: $font-button;
+  padding-top: 7px;
+  padding-bottom: 15px;
+  color: white;
+}
+.switch-link:hover {
+  color: rgb(163, 163, 163);
+}
+.switch-link:active {
+  color: rgb(107, 107, 107);
+}
+
+.tooltips {
+  position: inherit;
+}
+
+.tooltip-login, .tooltip-password {
+  visibility: hidden;
+  position: inherit;
+  height: auto;
+  width: auto;
+  background-color: black;
+  border-radius: 5px;
+  min-width: 200px;
+}
+.tooltip-login-text, .tooltip-password-text {
+  font-family: $font-button;
+  padding: 5px 15px 5px 15px;
+  user-select: none;
+  text-align: center;
+  font-size: 12px;
+  color: rgb(255, 255, 255);
+}
+
+.tooltip-login {
+  position: absolute;
+  top: -185px;
+  left: 40px;
+}
+.tooltip-password {
+  position: absolute;
+  top: -144px;
+  left: 120px;
+}
+
+.tooltip-login-border {
+  position: inherit;
+  left: 20px;
+  border: 10px solid transparent;
+	border-top-color: rgb(0, 0, 0);
+  border-radius: 10;
+}
+.tooltip-password-border {
+  position: inherit;
+  left: 20px;
+  border: 10px solid transparent;
+	border-top-color: rgb(0, 0, 0);
+  border-radius: 10;
+}

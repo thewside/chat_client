@@ -1,0 +1,34 @@
+{
+    "extends": [    
+        "eslint:recommended",
+        "plugin:react/recommended"],
+    "parserOptions": {
+      "ecmaFeatures": {
+        "jsx": true
+      }
+    },
+    "rules": {
+        "indent": [
+          "error",
+          2,
+          {
+            "SwitchCase": 1
+          }
+        ],
+        "quotes": [
+          "error",
+          "single"
+        ],
+        "semi": [
+          "error",
+          "never"
+        ],
+        "no-console": [
+          "warn",
+          { "allow": ["error", "warn"] }
+        ],
+        "no-unused-vars": [
+          "warn"
+        ]
+      }
+  }

@@ -1,0 +1,13 @@
+{
+  "files": {
+    "main.css": "/tapforprize/static/css/main.a4cbc46e.css",
+    "main.js": "/tapforprize/static/js/main.8895e381.js",
+    "index.html": "/tapforprize/index.html",
+    "main.a4cbc46e.css.map": "/tapforprize/static/css/main.a4cbc46e.css.map",
+    "main.8895e381.js.map": "/tapforprize/static/js/main.8895e381.js.map"
+  },
+  "entrypoints": [
+    "static/css/main.a4cbc46e.css",
+    "static/js/main.8895e381.js"
+  ]
+}

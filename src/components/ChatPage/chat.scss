@@ -1,0 +1,117 @@
+.chat-page-container {  
+    position: absolute;
+    display: flex;
+    top: 0;
+    left: 0;
+    width: 100%;
+    height: 100%;
+    background-color: rgb(24, 24, 24);
+    color: white;
+}
+
+.channel-container, .channel-container > div {
+    margin: 10px;
+}
+.channel-container {
+    margin: 0;
+    background-color: rgb(29, 29, 29);
+}
+.channel-tab {
+    user-select: none;
+    display: inline-flex;
+    background-color: rgb(59, 59, 59);
+    padding: 5px;
+}
+.close-button {
+    background-color: rgb(66, 66, 66);
+    margin-left: 10px;
+}
+
+
+.chat-container {
+    background-color: rgb(44, 44, 44);
+    width: 100%;
+    display: flex;
+    flex-direction: column;
+    justify-content: space-between;
+}
+.message-container {
+    display: flex;
+    flex-direction: column-reverse;
+    margin-top: auto;
+    height: 100%;
+    overflow: scroll;
+    overflow-x: hidden;
+}
+
+.message-user-container {
+    display: flex;
+    padding-left: 10px;
+}
+.user-message-avatar {
+    width: 50px;
+    height: 50px;
+}
+.user-message-nickname {
+    color: orangered;
+    padding-left: 8px;
+    padding-top: 6px;
+    padding-bottom: 2px;
+}
+.user-message-text {
+    padding-top: 4px;
+    width: 100%;
+    max-width: 800px;
+    padding-right: 25%;
+    padding-left: 8px;
+    padding-bottom: 10px;
+    overflow-wrap: break-word;
+}
+.input-container {
+    height: 100px;
+    background-color: black;
+    padding: 5px;
+}
+.input-element, .input-element-emote {
+    display: inline-flex;
+    pointer-events: none;
+    padding: 1px;
+    margin-top: 0px;
+    margin-bottom: 0px;
+}
+.input-element{
+    background-color: rgb(247, 0, 255);
+    max-width: 100%;
+    width: auto;
+    height: auto;
+    min-width: 2px;
+    min-height: 15px;
+}
+.input-element-line-break{
+    height: 0px;
+    background-color: rgb(42, 218, 209);
+    width: 100%;
+    pointer-events: none;
+}
+.input-element-emote {
+    background-color: red;
+    max-height: 25px;
+    height: 24px;
+    width: 100%px;
+    max-width: 25px;
+    padding: 0;
+}
+.input-emote-pic {
+    position:relative;
+    top:15%;
+    margin-top: -3%;
+    margin-bottom: 0px;
+    max-height: 18px;
+    max-width: 18px;
+}
+.input-part {
+    padding: 2px 2px 2px 2px;
+    background-color: rgb(48, 95, 17);
+    min-height: 1px;
+    max-width: 100%;
+}
