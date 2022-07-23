@@ -40,7 +40,14 @@ export const InputField = () => {
       setChosenEmoji(emojiObject);
     };
 
-    const [selectInputs, setSelectInputs] = useState([]);
+    const [selectProperties, setSelectProperties] = useState({
+        indexAfterRemovalElement: 0,
+        previousElemLength: 0,
+        startSelectionIndex: 0, 
+        endSelectionIndex: 0,
+        startSelectionText: 0, 
+        endSelectionText: 0,
+    });
 
     const getSelectProperties = nodeType => {
         const selection = window.getSelection();
@@ -49,9 +56,15 @@ export const InputField = () => {
         const index = Number(elemHasIndex);
         const inputElement = focus?.parentElement;
         const inputElementContainer = focus?.parentElement?.parentElement;
+        const mainContainer = inputElementContainer?.parentElement;
         const textElem = focus?.textContent;
-        const [startSelection, endSelection] = [selection.focusOffset, selection.anchorOffset].sort((a, b) => a - b);
+
+        // const [startSelection, endSelection] = [selection.focusOffset, selection.anchorOffset].sort((a, b) => a - b);
+        const startSelection = selection.focusOffset ;
+        const endSelection = selection.anchorOffset;
         
+        const extentSelection = Number(selection?.extentNode?.parentElement?.parentElement?.dataset?.index);
+
         return {
             selection: selection, 
             focus: focus, 
@@ -62,33 +75,48 @@ export const InputField = () => {
             startSelection: startSelection, 
             endSelection: endSelection,
             textElem: textElem,
+            mainContainer: mainContainer,
+            extentSelection: extentSelection
         };
     }
 
     const accessToDelete = useRef(false)
-    useEffect(() => {
-        const observer = new MutationObserver(mutationRecors=>{
-            const {index} = getSelectProperties("focusNode")
+    const getElementByIndex = index => inputContent.current?.childNodes[index]?.firstChild?.childNodes[0];
 
-            mutationRecors.forEach(elem=>{
+    useEffect(() => {
+        const startSelectionIndex = selectProperties.indexAfterRemovalElement;
+        const startSelectionElemLength = selectProperties.previousElemLength;
+        const inputWhichShouldBeSelect = getElementByIndex(startSelectionIndex - 2);
+        if(inputWhichShouldBeSelect){
+            const range = document.createRange();
+            range.setStart(inputWhichShouldBeSelect, startSelectionElemLength);
+            const sel = window.getSelection();
+            sel.removeAllRanges();
+            sel.addRange(range);
+        }
+
+        const observer = new MutationObserver(mutationRecors => {
+            mutationRecors.forEach(elem => {
                 const type = elem.type;
                 const targetText = elem.target;
-                if(type === "characterData" || type === "childList") {
-                    if(inputCollection[index]){
-                            setInputCollection(()=>{
-                                const inputText = targetText?.parentElement?.textContent;
-                                inputCollection[index].value = inputText
-                                return inputCollection
-                            })
+                if (type === "characterData" || type === "childList") {
+                    const { index } = getSelectProperties("focusNode");
+                    if (inputCollection[index]) {
+                        setInputCollection(() => {
+                            const inputText = targetText?.parentElement?.textContent;
+                            inputCollection[index].value = inputText
+                            return inputCollection
+                        })
                     }
                 }
-                })
+            })
         });
 
         observer.observe(inputContent.current, {
             childList: true,
             subtree: true,
-            characterData: true
+            characterData: true,
+            attributes: true
         });
 
         return () => observer.disconnect();
@@ -146,7 +174,7 @@ export const InputField = () => {
                             onFocus={e=>e.preventDefault()}
                             onClick={e=>e.preventDefault()}
                         >
-                            {<br key={index + 1+"br"}/>}
+                            {<br key={index + "br"}/>}
                         </span>
                     </div>
             )}
@@ -303,9 +331,9 @@ export const InputField = () => {
                             e.preventDefault()
                             setInputCollection(() => {
                                 let newInputCollection = inputCollection;
-                                const loseFirstElemFocusIndexTest =  Number(focus?.firstChild?.dataset?.index);
+                                // const loseFirstElemFocusIndexTest =  Number(focus?.firstChild?.dataset?.index);
+                                // console.log(loseFirstElemFocusIndexTest)
                                 const elemIndex = Number(elemHasIndex)
-                                console.log(loseFirstElemFocusIndexTest)
                                 if (isNaN(elemIndex)) return newInputCollection
                                 const firstPart = textElem.substring(0, startSelection);
                                 const secondPart = textElem.slice(startSelection);
@@ -401,9 +429,6 @@ export const InputField = () => {
                             if(accessToDelete.current) return e.preventDefault();
 
                             if(startSelection === 0) {
-                                const rightElemContent = textElem;
-                                const previousElement = focus?.parentElement?.parentElement?.previousElementSibling//?.previousElementSibling;
-                                const previousElementChild = previousElement?.firstChild?.childNodes[0];
                                 e.preventDefault();
                                 setInputCollection(() => {
                                     let result = inputCollection
@@ -411,25 +436,38 @@ export const InputField = () => {
                                     result = inputCollection.map((element, newIndex) => {
                                         const { type, index, value } = element;
                                         if (indexElement - 2 === index) {
-                                            return { type: type, index: newIndex, value: value + " " + rightElemContent }
+                                            return { type: type, index: newIndex, value: value + " " + textElem }
                                         }
                                         return { type: type, index: newIndex, value: value };
                                     })
                                     return [...result]
                                 })
-                                if(previousElementChild){
-                                    const textLength = previousElementChild.textContent.length;
-                                    const rightElemContentLength = focus.textContent.length;
-                                    const newCaretPosition = textLength - rightElemContentLength < 0 ? 0 : textLength - rightElemContentLength;
-                                    const resultElem = e.target.childNodes[indexElement - 2].firstChild;
+                                const {index} = getSelectProperties("focusNode");
+                                const previousElem = getElementByIndex(index - 2);
+                                setSelectProperties(prev=>{
+                                    return {
+                                        ...prev,
+                                        indexAfterRemovalElement: index,
+                                        previousElemLength: previousElem.length
+                                    }
+                                })
 
-                                    const range = document.createRange();
-                                    const sel = window.getSelection();
-                                    range.setStart(resultElem.childNodes[0], 2);
-                                    range.collapse(true);
-                                    sel.removeAllRanges();
-                                    sel.addRange(range);
-                                }
+                                // const previousElement = focus?.parentElement?.parentElement?.previousElementSibling?.previousElementSibling;
+                                // if(previousElement){
+                                //     const previousElementChild = previousElement?.firstChild?.childNodes[0];
+                                //     const textLength = previousElementChild.textContent.length;
+                                //     const resultElem = e.target.childNodes[indexElement - 2].firstChild;
+                                //     console.log(textLength)
+                                //     console.log(resultElem)
+                                //     console.log(previousElementChild)
+                                //     const range = document.createRange();
+                                //     const sel = window.getSelection();
+                                //     range.setStart(resultElem.childNodes[0], textLength);
+                                //     // range.setStart(previousElementChild, 2);
+                                //     range.collapse(true);
+                                //     sel.removeAllRanges();
+                                //     sel.addRange(range);
+                                // };
                             }
                         }
                         
@@ -441,18 +479,20 @@ export const InputField = () => {
                         }
                     }}
                     onSelect={ e=> {
-                            
-                        const {selection, focus, index, startSelection} = getSelectProperties("anchorNode");
-                        // console.log(selection)
-                        // console.log(focus)
-                        // console.log(index)
-                        // console.log(startSelection)
-
-                        // const selection = window.getSelection();
-                        // const focus = selection.anchorNode;
-                        // const elemHasIndex = focus?.parentElement?.parentElement?.dataset.index || focus?.parentElement?.dataset.index
-                        // const index = Number(elemHasIndex)
-                        // console.log(index)
+                        const {extentSelection, index, startSelection, endSelection} = getSelectProperties("anchorNode");
+                        setSelectProperties(prev => {
+                            return {...prev, 
+                                startSelectionText: startSelection,
+                                startSelectionIndex: index,
+                                endSelectionText: endSelection,
+                                endSelectionIndex: endSelection,
+                            }
+                        })          
+                                                                        //<=  =>
+                        console.log(index, "start index")               // 4  2
+                        console.log(endSelection, "end selection")      // 3  1
+                        console.log(extentSelection, "end Index")       // 2  4
+                        console.log(startSelection, "start selection")  // 1  4
                     }}
                     onKeyUp={e=>{
                         if(e.key === "ArrowRight" || e.key === "ArrowLeft") {
