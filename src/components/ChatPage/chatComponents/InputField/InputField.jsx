@@ -1,4 +1,6 @@
 import { useState, useEffect, useRef, useMemo } from "react";
+import { renderInputCollection } from "./renderInput";
+import { getSelectProperties } from "./getSelectProperties";
 
 const resize = e => {
     e.target.style.height = 'auto';
@@ -42,43 +44,14 @@ export const InputField = () => {
 
     const [selectProperties, setSelectProperties] = useState({
         indexAfterRemovalElement: 0,
-        previousElemLength: 0,
-        startSelectionIndex: 0, 
-        endSelectionIndex: 0,
-        startSelectionText: 0, 
-        endSelectionText: 0,
+        previousElemLength:       0,
+        inputRange: [],
+        indexRange: [],
+
     });
 
-    const getSelectProperties = nodeType => {
-        const selection = window.getSelection();
-        const focus = selection[nodeType]; //focusNode, extentNode, anchorNode
-        const elemHasIndex = focus?.parentElement?.parentElement?.dataset.index || focus?.parentElement?.dataset.index;
-        const index = Number(elemHasIndex);
-        const inputElement = focus?.parentElement;
-        const inputElementContainer = focus?.parentElement?.parentElement;
-        const mainContainer = inputElementContainer?.parentElement;
-        const textElem = focus?.textContent;
 
-        // const [startSelection, endSelection] = [selection.focusOffset, selection.anchorOffset].sort((a, b) => a - b);
-        const startSelection = selection.focusOffset ;
-        const endSelection = selection.anchorOffset;
-        
-        const extentSelection = Number(selection?.extentNode?.parentElement?.parentElement?.dataset?.index);
 
-        return {
-            selection: selection, 
-            focus: focus, 
-            index: index,
-            elemHasIndex:elemHasIndex,
-            inputElement: inputElement,
-            inputElementContainer: inputElementContainer,
-            startSelection: startSelection, 
-            endSelection: endSelection,
-            textElem: textElem,
-            mainContainer: mainContainer,
-            extentSelection: extentSelection
-        };
-    }
 
     const accessToDelete = useRef(false)
     const getElementByIndex = index => inputContent.current?.childNodes[index]?.firstChild?.childNodes[0];
@@ -123,86 +96,7 @@ export const InputField = () => {
 
     }, [inputCollection, setInputCollection]);
 
-    const renderInputCollection = (inputCollection) => {
-        return inputCollection.map((element, key) => {
-            const { type, index, value } = element;
-            if(type === "text") {
-                return (
-                    <div
-                        key={key}
-                        tabIndex={-1}
-                        data-index={index}
-                        data-type={type}
-                        className="input-element"
-                        contentEditable={true}
-                        suppressContentEditableWarning={true}
-                        onDrag={e=>e.preventDefault()}
-                    >
-                        <span
-                            className="input-part"
-                            tabIndex={-1}
-                            contentEditable={true}
-                            suppressContentEditableWarning={true}
-                            onDrag={e=>e.preventDefault()}
-                        >   
-                            {value}
-                        </span>
-                    </div>
-                )
-            }
 
-            if (type === "line-break") {
-                return (
-                    <div
-                        key={key}
-                        tabIndex={-1}
-                        data-index={index}
-                        data-type={type}
-                        className="input-element-line-break"
-                        contentEditable={false}
-                        suppressContentEditableWarning={true}
-                        onDrag={e => e.preventDefault()}
-                        onFocus={e=>e.preventDefault()}
-                        onClick={e=>e.preventDefault()}
-                    >
-                        <span
-                            className="input-part"
-                            tabIndex={-1}
-                            contentEditable={false}
-                            suppressContentEditableWarning={true}
-                            onDrag={e => e.preventDefault()}
-                            onFocus={e=>e.preventDefault()}
-                            onClick={e=>e.preventDefault()}
-                        >
-                            {<br key={index + "br"}/>}
-                        </span>
-                    </div>
-            )}
-            
-            if(type === "emote") {
-                return (
-                    <div
-                        key={key}
-                        tabIndex={-1}
-                        data-index={index}
-                        data-type={type}
-                        className="input-element-emote"
-                        contentEditable={false}
-                        onDrag={e=>e.preventDefault()}
-                        style={{userSelect: 'none'}}
-                        >
-                        <img
-                            className="input-emote-pic"
-                            src={value}
-                            alt=""
-                            tabIndex={-1}
-                            contentEditable={false}
-                        />
-                    </div>
-                )
-            }
-        })
-    };
 
     return (
         <div>
@@ -318,10 +212,9 @@ export const InputField = () => {
                     onFocus={e => e.preventDefault()}
                     onBlur={e => e.preventDefault()}
                     onKeyDown={e => {
-                        const {selection, focus, index, inputElement, inputText, textElem, elemHasIndex, startSelection, endSelection} = getSelectProperties("focusNode");
+                        const {selection, index, textElem, elemHasIndex, startPointSelection, endPointSelection} = getSelectProperties("focusNode");
                         const indexElement = index;
                         const focusElemLength = textElem?.length;
-
 
                         if(e.ctrlKey && e.keyCode === 90) {
                             return e.preventDefault()
@@ -331,19 +224,12 @@ export const InputField = () => {
                             e.preventDefault()
                             setInputCollection(() => {
                                 let newInputCollection = inputCollection;
-                                // const loseFirstElemFocusIndexTest =  Number(focus?.firstChild?.dataset?.index);
-                                // console.log(loseFirstElemFocusIndexTest)
                                 const elemIndex = Number(elemHasIndex)
                                 if (isNaN(elemIndex)) return newInputCollection
-                                const firstPart = textElem.substring(0, startSelection);
-                                const secondPart = textElem.slice(startSelection);
-                                // if(elemIndex === inputCollection.length - 1) {
-                                //     console.log(1234)
-                                //     console.log(startSelection)
-                                //     console.log(endSelection)
-                                //     console.log(textElem.length)
-                                // }
-                                if (startSelection > 0 && startSelection < textElem.length) {
+                                const firstPart = textElem.substring(0, startPointSelection);
+                                const secondPart = textElem.slice(startPointSelection);
+
+                                if (startPointSelection > 0 && startPointSelection < textElem.length) {
                                     console.log("between (all)")
                                     newInputCollection = [
                                         ...inputCollection.slice(0, elemIndex),
@@ -353,7 +239,7 @@ export const InputField = () => {
                                         ...inputCollection.slice(elemIndex + 1, inputCollection.length)
                                     ];
                                 }
-                                if(startSelection === textElem.length && elemIndex === inputCollection.length - 1) {
+                                if(startPointSelection === textElem.length && elemIndex === inputCollection.length - 1) {
                                     console.log("right (last input)")
                                     newInputCollection = [...inputCollection,
                                         { type: "line-break" , index: 0, value: emotesList.bm.src },
@@ -361,7 +247,7 @@ export const InputField = () => {
                                     ]
                                 }
 
-                                if(startSelection === 0 && elemIndex === 0){
+                                if(startPointSelection === 0 && elemIndex === 0){
                                     console.log("left (first input)")
                                     e.preventDefault();
                                     newInputCollection= ([
@@ -373,7 +259,7 @@ export const InputField = () => {
                                     ]);
                                 }
     
-                                if (startSelection === 0 && elemIndex > 0) {
+                                if (startPointSelection === 0 && elemIndex > 0) {
                                     console.log("left (not first input)")
                                     selection.anchorNode.textContent = "";
                                     newInputCollection = ([
@@ -385,7 +271,7 @@ export const InputField = () => {
                                     ]);
                                 }
     
-                                if (elemIndex >= 0 && elemIndex < inputCollection.length - 1 && startSelection === textElem.length) {
+                                if (elemIndex >= 0 && elemIndex < inputCollection.length - 1 && startPointSelection === textElem.length) {
                                     console.log("right (not last input)")
                                     newInputCollection = [
                                         ...inputCollection.slice(0, elemIndex + 1),
@@ -394,6 +280,7 @@ export const InputField = () => {
                                         ...inputCollection.slice(elemIndex + 1, inputCollection.length)
                                     ];
                                 }
+                                
     
                                 selection.removeAllRanges();
                                 const result = newInputCollection.map((elem, newIndex) => {
@@ -405,22 +292,23 @@ export const InputField = () => {
                             return
                         }
 
-
-
                         if (e.key === "Backspace") {
+                            const leftIndex  = selectProperties.indexRange[0];
+                            const rightIndex = selectProperties.indexRange[1];
+
                             if(inputCollection.length === 1 && focusElemLength === 0) {
                                 setInputCollection(()=>{
                                     inputCollection[0].value = ""
                                     return [...inputCollection]
                                 })
                             }
-                            if(startSelection < 1 && endSelection >= 1 && indexElement === 0) {
+                            if(startPointSelection < 1 && endPointSelection >= 1 && indexElement === 0) {
                                 accessToDelete.current = false;
                             }
-                            if(startSelection < 1 && endSelection < 1 && indexElement === 0) {
+                            if(startPointSelection < 1 && endPointSelection < 1 && indexElement === 0) {
                                 accessToDelete.current = true
                             }
-                            if(accessToDelete.current && startSelection > 0) {
+                            if(accessToDelete.current && startPointSelection > 0) {
                                 accessToDelete.current = false
                             }
                             if(accessToDelete.current && indexElement > 0) {
@@ -428,8 +316,9 @@ export const InputField = () => {
                             }
                             if(accessToDelete.current) return e.preventDefault();
 
-                            if(startSelection === 0) {
+                            if(startPointSelection === 0 && leftIndex === rightIndex) {
                                 e.preventDefault();
+                                console.log("cut")
                                 setInputCollection(() => {
                                     let result = inputCollection
                                     inputCollection.splice(indexElement - 1, 2)
@@ -447,28 +336,24 @@ export const InputField = () => {
                                 setSelectProperties(prev=>{
                                     return {
                                         ...prev,
-                                        indexAfterRemovalElement: index,
-                                        previousElemLength: previousElem.length
+                                        indexAfterRemovalElement: index || 0,
+                                        previousElemLength: previousElem?.length || 0
                                     }
                                 })
-
-                                // const previousElement = focus?.parentElement?.parentElement?.previousElementSibling?.previousElementSibling;
-                                // if(previousElement){
-                                //     const previousElementChild = previousElement?.firstChild?.childNodes[0];
-                                //     const textLength = previousElementChild.textContent.length;
-                                //     const resultElem = e.target.childNodes[indexElement - 2].firstChild;
-                                //     console.log(textLength)
-                                //     console.log(resultElem)
-                                //     console.log(previousElementChild)
-                                //     const range = document.createRange();
-                                //     const sel = window.getSelection();
-                                //     range.setStart(resultElem.childNodes[0], textLength);
-                                //     // range.setStart(previousElementChild, 2);
-                                //     range.collapse(true);
-                                //     sel.removeAllRanges();
-                                //     sel.addRange(range);
-                                // };
                             }
+                            
+                            // if(leftIndex !== rightIndex){
+                            //     e.preventDefault()
+                            //     console.log(selectProperties)
+                            //     setInputCollection(() => {
+                            //         let result = inputCollection;
+                            //         result = [
+                            //             ...inputCollection.slice(leftIndex, rightIndex),
+                            //             ...inputCollection
+                            //         ]
+                            //         return [...result];
+                            //     })
+                            // }
                         }
                         
                         
@@ -478,44 +363,25 @@ export const InputField = () => {
                             return
                         }
                     }}
-                    onSelect={ e=> {
-                        const {extentSelection, index, startSelection, endSelection} = getSelectProperties("anchorNode");
+
+                    onSelect={ ()=> {
+                        const {extentSelection, index, startPointSelection, endPointSelection} = getSelectProperties("anchorNode");
+                        
+                        const sortIndex = [index, extentSelection].sort((a, b) => a - b);
+                        let sortRanges;
+                        if(sortIndex[0] === index) {
+                            sortRanges = [endPointSelection, startPointSelection];
+                        };
+                        if(sortIndex[1] === index){
+                            sortRanges = [startPointSelection, endPointSelection];
+                        };
+
                         setSelectProperties(prev => {
                             return {...prev, 
-                                startSelectionText: startSelection,
-                                startSelectionIndex: index,
-                                endSelectionText: endSelection,
-                                endSelectionIndex: endSelection,
+                                indexRange: sortIndex  || [0, 0],
+                                inputRange: sortRanges || [0, 0]
                             }
-                        })          
-                                                                        //<=  =>
-                        console.log(index, "start index")               // 4  2
-                        console.log(endSelection, "end selection")      // 3  1
-                        console.log(extentSelection, "end Index")       // 2  4
-                        console.log(startSelection, "start selection")  // 1  4
-                    }}
-                    onKeyUp={e=>{
-                        if(e.key === "ArrowRight" || e.key === "ArrowLeft") {
-                            
-                            const {selection, focus, index, startSelection} = getSelectProperties("extentNode");
-                            // console.log(selection)
-                            // console.log(focus)
-                            // console.log(index)
-
-                            // console.log(startSelection)
-                            // const selection = window.getSelection();
-                            // const focus = selection.extentNode; 
-                            // const elemHasIndex = focus?.parentElement?.parentElement?.dataset.index || focus?.parentElement?.dataset.index
-                            // const index = Number(elemHasIndex)
-                            // console.log(index)
-                        }
-                    }}
-                    onMouseUp={e=>{
-                        const {selection, focus, index, startSelection} = getSelectProperties("focusNode");
-                        // console.log(selection)
-                        // console.log(focus)
-                        // console.log(index)
-                        // console.log(startSelection)
+                        });
                     }}
                 >
                     {renderInputCollection(inputCollection)}
