@@ -9,9 +9,12 @@ export const getSelectProperties = nodeType => {
     const textElem = focus?.textContent;
     const startPointSelection = selection.focusOffset;
     const endPointSelection = selection.anchorOffset;
-    
-    const extentSelection = Number(selection?.extentNode?.parentElement?.parentElement?.dataset?.index);
-
+    let extentSelection = Number(selection?.focusNode?.parentElement?.parentElement?.dataset?.index);
+    if(isNaN(extentSelection)){
+        extentSelection = index
+    }
+    const emoteElement = focus?.dataset?.type === "emote";
+    const emoteIndex = Number(focus?.dataset?.index);
     return {
         selection: selection, 
         focus: focus, 
@@ -23,6 +26,8 @@ export const getSelectProperties = nodeType => {
         endPointSelection: endPointSelection,
         textElem: textElem,
         mainContainer: mainContainer,
-        extentSelection: extentSelection
+        extentSelection: extentSelection,
+        emoteElement: emoteElement,
+        emoteIndex:emoteIndex
     };
 }

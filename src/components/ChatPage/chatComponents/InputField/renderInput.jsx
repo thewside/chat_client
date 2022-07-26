@@ -12,7 +12,6 @@ export const renderInputCollection = (inputCollection) => {
                     className="input-element"
                     contentEditable={true}
                     suppressContentEditableWarning={true}
-                    onDrag={e=>e.preventDefault()}
                 >
                     <span
                         className="input-part"
@@ -20,6 +19,7 @@ export const renderInputCollection = (inputCollection) => {
                         contentEditable={true}
                         suppressContentEditableWarning={true}
                         onDrag={e=>e.preventDefault()}
+                        spellCheck={false}
                     >   
                         {value}
                     </span>
@@ -40,6 +40,7 @@ export const renderInputCollection = (inputCollection) => {
                     onDrag={e => e.preventDefault()}
                     onFocus={e=>e.preventDefault()}
                     onClick={e=>e.preventDefault()}
+                    onKeyDown={e=>e.preventDefault()}
                 >
                     <span
                         className="input-part"
@@ -49,6 +50,7 @@ export const renderInputCollection = (inputCollection) => {
                         onDrag={e => e.preventDefault()}
                         onFocus={e=>e.preventDefault()}
                         onClick={e=>e.preventDefault()}
+                        onKeyDown={e=>e.preventDefault()}
                     >
                         {<br key={index + "br"}/>}
                     </span>
@@ -63,16 +65,19 @@ export const renderInputCollection = (inputCollection) => {
                     data-index={index}
                     data-type={type}
                     className="input-element-emote"
-                    contentEditable={false}
-                    onDrag={e=>e.preventDefault()}
-                    style={{userSelect: 'none'}}
-                    >
+                    onMouseDown={e=>e.preventDefault()}
+                    onFocus={e=>e.preventDefault()}
+                    onKeyDown={e=>e.preventDefault()}
+                >
                     <img
+                        tabIndex={-1}
                         className="input-emote-pic"
                         src={value}
                         alt=""
-                        tabIndex={-1}
-                        contentEditable={false}
+                        draggable={false}
+                        onMouseDown={e=>e.preventDefault()}
+                        onFocus={e=>e.preventDefault()}
+                        onKeyDown={e=>e.preventDefault()}
                     />
                 </div>
             )

@@ -1,13 +1,13 @@
 import { useState, useEffect, useRef, useMemo } from "react";
 import { renderInputCollection } from "./renderInput";
 import { getSelectProperties } from "./getSelectProperties";
+import { useCallback } from "react";
+import { pickEmote } from "./pickEmote";
+// const resize = e => {
+//     e.target.style.height = 'auto';
+//     e.target.style.height = e.target.scrollHeight + 'px';
+// };
 
-const resize = e => {
-    e.target.style.height = 'auto';
-    e.target.style.height = e.target.scrollHeight + 'px';
-};
-//config
-//import fetchFunc imitation
 const emotesList = {
     tf: {
         src: "https://media.discordapp.net/attachments/846725159938424862/996708538221076570/unknown.png?width=452&height=452",
@@ -25,6 +25,7 @@ const emotesList = {
 
 export const InputField = () => {
     const inputContent = useRef();
+    const getElementByIndex = index => inputContent.current?.childNodes[index]?.firstChild?.childNodes[0];
     
     const [inputCollection, setInputCollection] = useState([
         { type: "text"        , index: 0, value: "123456789056222222222222222222222222222222222222222222222222222222222227890" },
@@ -35,26 +36,34 @@ export const InputField = () => {
         { type: "emote"       , index: 5, value: emotesList.bm.src },
         { type: "text"        , index: 6, value: "z" },
     ]);
-    const [clearAction, setClearAction] = useState(false);
-
-    const [chosenEmoji, setChosenEmoji] = useState(null);
-    const onEmojiClick = (event, emojiObject) => {
-      setChosenEmoji(emojiObject);
-    };
-
+    
     const [selectProperties, setSelectProperties] = useState({
         indexAfterRemovalElement: 0,
         previousElemLength:       0,
         inputRange: [],
         indexRange: [],
-
     });
 
+    const stopRepeating = (startPointSelection, leftElemTextContent, e, key) => {
+        //key === 17 || key === 67 || key === 16
+        if(key === 13 ) return e.preventDefault();
+
+        //left right
+        if(key === 39) {
+            if(startPointSelection === leftElemTextContent.length){
+                e.preventDefault()
+            }
+        }
+        if(key === 37){
+            if(startPointSelection === 0) { 
+                e.preventDefault()
+            }
+        }
+
+        if(key < 37 && key > 90) return e.preventDefault()
+    };
 
 
-
-    const accessToDelete = useRef(false)
-    const getElementByIndex = index => inputContent.current?.childNodes[index]?.firstChild?.childNodes[0];
 
     useEffect(() => {
         const startSelectionIndex = selectProperties.indexAfterRemovalElement;
@@ -66,6 +75,7 @@ export const InputField = () => {
             const sel = window.getSelection();
             sel.removeAllRanges();
             sel.addRange(range);
+            sel.removeAllRanges();
         }
 
         const observer = new MutationObserver(mutationRecors => {
@@ -94,112 +104,49 @@ export const InputField = () => {
 
         return () => observer.disconnect();
 
+    // eslint-disable-next-line react-hooks/exhaustive-deps
     }, [inputCollection, setInputCollection]);
 
+    const resultInput = useMemo(()=> renderInputCollection(inputCollection), [inputCollection]);
+    
+    useEffect(()=>{
+        console.log(selectProperties.indexRange)
+        console.log(selectProperties.inputRange)
+    }, [selectProperties]);
 
+    const selectHandler = useCallback(() => {
+        const { extentSelection, index, startPointSelection, endPointSelection } = getSelectProperties("anchorNode");
+        // if(startPointSelection === endPointSelection) return
+        const sortIndex = [index, extentSelection].sort((a, b) => a - b);
+        let sortRanges;
+        if (sortIndex[0] === index) {
+            sortRanges = [endPointSelection, startPointSelection];
+        };
+        if (sortIndex[1] === index) {
+            sortRanges = [startPointSelection, endPointSelection];
+        };
+        setSelectProperties(prev => {
+            return {
+                ...prev,
+                indexRange: sortIndex ,
+                inputRange: sortRanges
+            }
+        })
+    }, []);
+
+
+    useEffect(()=>{
+        window.addEventListener("mouseup", selectHandler);
+        return () => window.removeEventListener("mouseup", selectHandler);
+    }, [])
 
     return (
         <div>
             <div>
                 <img
-                    style={{
-                        width:"50px",
-                        height: "50px"
-                    }}
-                    onClick={ e =>{
-                        //e.target - id emote, src, etc
-                        setInputCollection(() => {
-                            
-                            const {selection, index, focus, elemHasIndex} = getSelectProperties("focusNode");
-                            
-                            let newInputCollection;
-                            if (!elemHasIndex) {
-                                newInputCollection = ([
-                                    ...inputCollection,
-                                        { type: "emote" , index: 0, value: emotesList.bm.src },
-                                        { type: "text"  , index: 1, value: ""},
-                                ]);
-                                selection.removeAllRanges();
-                                return newInputCollection.map((element, newIndex) => {
-                                    const { type, index, value } = element;
-                                    return { type: type, index: newIndex, value: value };
-                                })
-                            }
-
-                            const elemIndex = Number(elemHasIndex);
-                            const caretPosition = selection?.anchorOffset;
-                            const textElem = selection.anchorNode.textContent;
-                            const firstPart = textElem.substring(0, caretPosition);
-                            const secondPart = textElem.slice(caretPosition);
-                            
-
-                            if(caretPosition === 0 && elemIndex === 0){
-                                console.log("left (first input)")
-                                selection.anchorNode.textContent = "";
-                                newInputCollection= ([
-                                    ...inputCollection.slice(0, elemIndex),
-                                        { type: "text"  , index: 0, value: ""},
-                                        { type: "emote" , index: 1, value: emotesList.bm.src  },
-                                        { type: "text"  , index: 2, value: secondPart},
-                                    ...inputCollection.slice(elemIndex + 1, inputCollection.length)
-                                ]);
-                            }
-
-                            if (caretPosition === 0 && elemIndex > 0) {
-                                console.log("left (not first input)")
-                                selection.anchorNode.textContent = "";
-                                newInputCollection = ([
-                                    ...inputCollection.slice(0, elemIndex),
-                                        { type: "text"  , index: 0, value: ""},
-                                        { type: "emote" , index: 1, value: emotesList.bm.src },
-                                        { type: "text"  , index: 2, value: secondPart},
-                                    ...inputCollection.slice(elemIndex + 1, inputCollection.length)
-                                ]);
-                            }
-                            
-                            if (elemIndex === inputCollection.length - 1 && caretPosition === textElem.length) {
-                                console.log("right (last input)")
-                                newInputCollection = ([
-                                    ...inputCollection,
-                                        { type: "emote" , index: 0, value: emotesList.bm.src },
-                                        { type: "text"  , index: 1, value: ""},
-                                ]);
-                            }
-
-                            if (elemIndex >= 0 && elemIndex < inputCollection.length - 1 && caretPosition === textElem.length) {
-                                console.log("right (not last input)")
-                                newInputCollection = [
-                                    ...inputCollection.slice(0, elemIndex + 1),
-                                    { type: "emote", index: 0, value: emotesList.tf.src },
-                                    { type: "text",  index: 999, value: "" },
-                                    ...inputCollection.slice(elemIndex + 1, inputCollection.length)
-                                ];
-                            }
-
-                            if (caretPosition > 0 && caretPosition < textElem.length) {
-                                console.log("between (all)")
-                                newInputCollection = [
-                                    ...inputCollection.slice(0, elemIndex),
-                                        { type: "text"  , index: 0, value: firstPart},
-                                        { type: "emote" , index: 1, value: emotesList.bm.src },
-                                        { type: "text"  , index: 2, value: secondPart},
-                                    ...inputCollection.slice(elemIndex + 1, inputCollection.length)
-                                ];
-                            }
-                            selection.removeAllRanges();
-                            const result = newInputCollection.map((elem, newIndex) => {
-                                const { type, index, value } = elem;
-                                if(index === 999){
-                                    const elemNode = focus?.parentElement?.parentElement;
-                                    const elemWithFakeText = elemNode?.nextElementSibling?.nextElementSibling;
-                                    if(!elemWithFakeText) return { type: type, index: newIndex, value: value }
-                                    const elemWithText = elemWithFakeText?.firstChild;
-                                    elemWithText.textContent = "";
-                                }
-                                return { type: type, index: newIndex, value: value };
-                            })
-                            return [...result]
-                        });
+                    style={{width:"50px", height: "50px"}}
+                    onClick={e =>{
+                        pickEmote(inputCollection, setInputCollection); // create emote changer
                     }}
                     src={emotesList.bm.src}
                     alt=""
@@ -211,10 +158,24 @@ export const InputField = () => {
                     suppressContentEditableWarning={true}
                     onFocus={e => e.preventDefault()}
                     onBlur={e => e.preventDefault()}
+                    onSelect={ e =>{
+                        if(e.nativeEvent.which === 1) return e.preventDefault()
+                        selectHandler()
+                    }}
                     onKeyDown={e => {
                         const {selection, index, textElem, elemHasIndex, startPointSelection, endPointSelection} = getSelectProperties("focusNode");
+                        const leftIndex  = selectProperties.indexRange[0];
+                        const rightIndex = selectProperties.indexRange[1];
+                        const rangePositionLeft  = selectProperties?.inputRange[0];
+                        const rangePositionRight = selectProperties?.inputRange[1];
+                        const leftElemTextContent = getElementByIndex(leftIndex);
                         const indexElement = index;
                         const focusElemLength = textElem?.length;
+                        const rightElemTextContent = getElementByIndex(rightIndex);
+
+                        if(e.repeat) {
+                            return stopRepeating(startPointSelection, leftElemTextContent, e, e.keyCode)
+                        }
 
                         if(e.ctrlKey && e.keyCode === 90) {
                             return e.preventDefault()
@@ -239,6 +200,7 @@ export const InputField = () => {
                                         ...inputCollection.slice(elemIndex + 1, inputCollection.length)
                                     ];
                                 }
+
                                 if(startPointSelection === textElem.length && elemIndex === inputCollection.length - 1) {
                                     console.log("right (last input)")
                                     newInputCollection = [...inputCollection,
@@ -280,45 +242,78 @@ export const InputField = () => {
                                         ...inputCollection.slice(elemIndex + 1, inputCollection.length)
                                     ];
                                 }
-                                
     
                                 selection.removeAllRanges();
                                 const result = newInputCollection.map((elem, newIndex) => {
-                                    const { type, index, value } = elem;
+                                    const { type, value } = elem;
                                     return { type: type, index: newIndex, value: value };
                                 })
                                 return [...result]
                             });
                             return
                         }
-
+                        if(e.key === "ArrowLeft" || e.key === "ArrowUp"|| e.key === "ArrowDown") {
+                            if(startPointSelection === 0) {
+                                e.preventDefault();
+                            }
+                        }
+                        if(e.key === "ArrowRight" || e.key === "ArrowUp"|| e.key === "ArrowDown") {
+                            if(startPointSelection === leftElemTextContent.length) {
+                                e.preventDefault();
+                            }
+                        }
                         if (e.key === "Backspace") {
-                            const leftIndex  = selectProperties.indexRange[0];
-                            const rightIndex = selectProperties.indexRange[1];
+                            console.log(leftIndex)
+                            console.log(rightIndex)
+                            console.log(rangePositionLeft)
+                            console.log(rangePositionRight)
 
+                            if(leftIndex === 0 && rightIndex === 0 && 
+                                rangePositionLeft === 0 && rangePositionRight === 0){
+                                   e.preventDefault()
+                            }
+                            
+                            // if(leftIndex === inputCollection.length && rightIndex === inputCollection.length && 
+                            //     rangePositionLeft === leftElemTextContent.textContent.length && rangePositionRight === rightElemTextContent.textContent.length){
+                            //        e.preventDefault()
+                            // }
+
+                            if(leftIndex > 0 && rightIndex > 0 && 
+                                rangePositionLeft === 0 && rangePositionRight === 0){
+                                    e.preventDefault();
+                                    console.log("del from right side")
+                                    setInputCollection(() => {
+                                        let result = inputCollection
+                                        inputCollection.splice(indexElement - 1, 2)
+                                        result = inputCollection.map((element, newIndex) => {
+                                            const { type, index, value } = element;
+                                            if (indexElement - 2 === index) {
+                                                return { type: type, index: newIndex, value: value + " " + textElem }
+                                            }
+                                            return { type: type, index: newIndex, value: value };
+                                        })
+                                        return [...result]
+                                    })
+                                    const {index} = getSelectProperties("focusNode");
+                                    const previousElem = getElementByIndex(index - 2);
+                                    setSelectProperties(prev=>{
+                                        return {
+                                            ...prev,
+                                            indexAfterRemovalElement: index,            // || 0,
+                                            previousElemLength: previousElem?.length    // || 0
+                                        }
+                                    })
+                            }
                             if(inputCollection.length === 1 && focusElemLength === 0) {
                                 setInputCollection(()=>{
                                     inputCollection[0].value = ""
                                     return [...inputCollection]
                                 })
-                            }
-                            if(startPointSelection < 1 && endPointSelection >= 1 && indexElement === 0) {
-                                accessToDelete.current = false;
-                            }
-                            if(startPointSelection < 1 && endPointSelection < 1 && indexElement === 0) {
-                                accessToDelete.current = true
-                            }
-                            if(accessToDelete.current && startPointSelection > 0) {
-                                accessToDelete.current = false
-                            }
-                            if(accessToDelete.current && indexElement > 0) {
-                                accessToDelete.current = false
-                            }
-                            if(accessToDelete.current) return e.preventDefault();
+                            };
 
-                            if(startPointSelection === 0 && leftIndex === rightIndex) {
+                            if(startPointSelection === 0 && leftIndex !== rightIndex) {
                                 e.preventDefault();
-                                console.log("cut")
+                                console.log("del qwe");
                                 setInputCollection(() => {
                                     let result = inputCollection
                                     inputCollection.splice(indexElement - 1, 2)
@@ -336,26 +331,65 @@ export const InputField = () => {
                                 setSelectProperties(prev=>{
                                     return {
                                         ...prev,
-                                        indexAfterRemovalElement: index || 0,
-                                        previousElemLength: previousElem?.length || 0
+                                        indexAfterRemovalElement: index,            // || 0,
+                                        previousElemLength: previousElem?.length    // || 0
                                     }
                                 })
                             }
-                            
-                            // if(leftIndex !== rightIndex){
-                            //     e.preventDefault()
-                            //     console.log(selectProperties)
-                            //     setInputCollection(() => {
-                            //         let result = inputCollection;
-                            //         result = [
-                            //             ...inputCollection.slice(leftIndex, rightIndex),
-                            //             ...inputCollection
-                            //         ]
-                            //         return [...result];
-                            //     })
-                            // }
+
+                            if(leftIndex !== rightIndex){
+                                e.preventDefault();
+                                const newContent = leftElemTextContent?.textContent.slice(0, rangePositionLeft) + 
+                                rightElemTextContent?.textContent.slice(rangePositionRight, rightElemTextContent.textContent.length);
+                                setInputCollection(() => {
+                                    let result = inputCollection;
+                                    result = [
+                                        ...inputCollection.slice(0, leftIndex),
+                                            { type: "text", index: 0, value: newContent},
+                                        ...inputCollection.slice(rightIndex + 1, inputCollection.length)
+                                    ]
+                                    return [...result].map((e,newIndex)=>{
+                                        const { type, value} = e;
+                                        return { type: type, index: newIndex, value: value}
+                                    })
+                                })
+                                selection.removeAllRanges();
+                            }
+                            if(leftIndex === rightIndex && rangePositionLeft === 0 && rangePositionRight === rightElemTextContent.length){
+                                e.preventDefault();
+                                console.log("select all on element (right to left)")
+                                console.log(leftIndex, "leftindex")
+                                
+                                // const rightElemTextContent = getElementByIndex(rightIndex + 2);
+                                // const newContent = leftElemTextContent.textContent + rightElemTextContent?.textContent;
+                                // setInputCollection(() => {
+                                //     let result = inputCollection;
+                                //     result = [
+                                //         ...inputCollection.slice(0, leftIndex + 1),
+                                //             { type: "text", index: 0, value: rightElemTextContent.textContent || ""},
+                                //         ...inputCollection.slice(rightIndex + 3, inputCollection.length)
+                                //     ]
+                                //     return [...result].map((e,newIndex)=>{
+                                //         const { type, value} = e;
+                                //         return { type: type, index: newIndex, value: value}
+                                //     })
+                                // })
+                                setInputCollection(() => {
+                                    let result = inputCollection;
+                                    result = [
+                                        ...inputCollection.slice(0, leftIndex),
+                                            { type: "text", index: 0, value: ""},
+                                        ...inputCollection.slice(rightIndex + 1, inputCollection.length)
+                                    ]
+                                    return [...result]
+                                    // .map((e,newIndex)=>{
+                                    //     const { type, value} = e;
+                                    //     return { type: type, index: newIndex, value: value}
+                                    // })
+                                })
+                                selection.removeAllRanges();
+                            }
                         }
-                        
                         
                         if(e.key === "Enter"){
                             e.preventDefault()
@@ -363,28 +397,20 @@ export const InputField = () => {
                             return
                         }
                     }}
-
-                    onSelect={ ()=> {
-                        const {extentSelection, index, startPointSelection, endPointSelection} = getSelectProperties("anchorNode");
-                        
-                        const sortIndex = [index, extentSelection].sort((a, b) => a - b);
-                        let sortRanges;
-                        if(sortIndex[0] === index) {
-                            sortRanges = [endPointSelection, startPointSelection];
-                        };
-                        if(sortIndex[1] === index){
-                            sortRanges = [startPointSelection, endPointSelection];
-                        };
-
-                        setSelectProperties(prev => {
-                            return {...prev, 
-                                indexRange: sortIndex  || [0, 0],
-                                inputRange: sortRanges || [0, 0]
-                            }
-                        });
+                    onDoubleClick={e=>{
+                        e.preventDefault();
+                        const leftIndex  = selectProperties.indexRange[0];
+                        const index = getElementByIndex(leftIndex);
+                        const range = new Range();
+                        const sel = window.getSelection()
+                        range.setStart(index, 0);
+                        range.setEnd(index, index.textContent.length);
+                        sel.removeAllRanges();
+                        sel.addRange(range);
+                        console.log("double click select all")
                     }}
                 >
-                    {renderInputCollection(inputCollection)}
+                    {resultInput}
                 </div>
             </div>
         </div>
