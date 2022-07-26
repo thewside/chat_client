@@ -38,6 +38,7 @@ export const InputField = () => {
     ]);
     
     const [selectProperties, setSelectProperties] = useState({
+        selectedInput: null,
         indexAfterRemovalElement: 0,
         previousElemLength:       0,
         inputRange: [],
@@ -110,8 +111,8 @@ export const InputField = () => {
     const resultInput = useMemo(()=> renderInputCollection(inputCollection), [inputCollection]);
     
     useEffect(()=>{
-        console.log(selectProperties.indexRange)
-        console.log(selectProperties.inputRange)
+        // console.log(selectProperties.indexRange)
+        // console.log(selectProperties.inputRange)
     }, [selectProperties]);
 
     const selectHandler = useCallback(() => {
@@ -272,7 +273,7 @@ export const InputField = () => {
                                 rangePositionLeft === 0 && rangePositionRight === 0){
                                    e.preventDefault()
                             }
-                            
+
                             // if(leftIndex === inputCollection.length && rightIndex === inputCollection.length && 
                             //     rangePositionLeft === leftElemTextContent.textContent.length && rangePositionRight === rightElemTextContent.textContent.length){
                             //        e.preventDefault()
@@ -359,6 +360,8 @@ export const InputField = () => {
                                 e.preventDefault();
                                 console.log("select all on element (right to left)")
                                 console.log(leftIndex, "leftindex")
+
+                                // inputSelected.current = true;
                                 
                                 // const rightElemTextContent = getElementByIndex(rightIndex + 2);
                                 // const newContent = leftElemTextContent.textContent + rightElemTextContent?.textContent;
@@ -397,17 +400,69 @@ export const InputField = () => {
                             return
                         }
                     }}
+
+                    onClick={e => {
+                        const datasetType = e.target.dataset.type || e.target.parentElement.dataset.type;
+                        if (datasetType === "emote") {
+                            e.preventDefault();
+                            return
+                        }
+                        const { index } = getSelectProperties("focusNode")
+                        if (selectProperties.selectedInput !== index) {
+                            console.log("yes")
+                            setSelectProperties(() => {
+                                return {
+                                    ...selectProperties,
+                                    selectedInput: null
+                                }
+                            })
+                        }
+                    }}
+
                     onDoubleClick={e=>{
                         e.preventDefault();
-                        const leftIndex  = selectProperties.indexRange[0];
-                        const index = getElementByIndex(leftIndex);
+                        const datasetType = e.target.dataset.type || e.target.parentElement.dataset.type;
+                        if(datasetType === "emote") {
+                            e.preventDefault();
+                            return
+                        }
+                        const firstIndex = selectProperties.indexRange[0];
+                        const firstElem = getElementByIndex(0);
+                        const leftElem = getElementByIndex(firstIndex);
+                        const lastElem = getElementByIndex(inputCollection.length - 1);
                         const range = new Range();
-                        const sel = window.getSelection()
-                        range.setStart(index, 0);
-                        range.setEnd(index, index.textContent.length);
-                        sel.removeAllRanges();
-                        sel.addRange(range);
-                        console.log("double click select all")
+                        const {selection, index} = getSelectProperties("focusNode")
+
+                        console.log(selectProperties.selectedInput);
+                        console.log(index);
+
+                        if (selectProperties.selectedInput === index &&
+                            selection.focusOffset === leftElem.textContent.length) {
+
+                            selection.removeAllRanges();
+                            range.setStart(firstElem, 0);
+                            range.setEnd(lastElem, lastElem.textContent.length);
+                            selection.addRange(range);
+                            console.log("double click select all ");
+                            return
+                        };
+                        
+                        if (selection.focusOffset === leftElem.textContent.length) {
+
+                            selection.removeAllRanges();
+                            range.setStart(leftElem, 0);
+                            range.setEnd(leftElem, leftElem.textContent.length);
+                            selection.addRange(range);
+                            console.log("double click select part")
+                                
+                            setSelectProperties(()=>{
+                                return {...selectProperties,
+                                    selectedInput: index
+                                }
+                            })
+                            
+                            return
+                        }
                     }}
                 >
                     {resultInput}
