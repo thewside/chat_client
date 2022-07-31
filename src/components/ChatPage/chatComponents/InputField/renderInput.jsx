@@ -1,5 +1,5 @@
 export const renderInputCollection = (inputCollection) => {
-    console.log("...rendering")
+    // console.log("...rendering")
     return inputCollection.map((element, key) => {
         const { type, index, value } = element;
         if(type === "text") {
@@ -36,21 +36,24 @@ export const renderInputCollection = (inputCollection) => {
                     data-type={type}
                     className="input-element-line-break"
                     contentEditable={false}
-                    suppressContentEditableWarning={true}
                     onDrag={e => e.preventDefault()}
                     onFocus={e=>e.preventDefault()}
                     onClick={e=>e.preventDefault()}
                     onKeyDown={e=>e.preventDefault()}
+                    onMouseDown={e=>e.preventDefault()}
+                    onSelect={e=>e.preventDefault()}
                 >
                     <span
                         className="input-part"
                         tabIndex={-1}
                         contentEditable={false}
-                        suppressContentEditableWarning={true}
+                        draggable={false}
+                        onMouseDown={e=>e.preventDefault()}
                         onDrag={e => e.preventDefault()}
                         onFocus={e=>e.preventDefault()}
                         onClick={e=>e.preventDefault()}
                         onKeyDown={e=>e.preventDefault()}
+                        onSelect={e=>e.preventDefault()}
                     >
                         {<br key={index + "br"}/>}
                     </span>
@@ -66,6 +69,7 @@ export const renderInputCollection = (inputCollection) => {
                     data-type={type}
                     className="input-element-emote"
                     onMouseDown={e=>e.preventDefault()}
+                    contentEditable={false}
                     onFocus={e=>e.preventDefault()}
                     onKeyDown={e=>e.preventDefault()}
                 >

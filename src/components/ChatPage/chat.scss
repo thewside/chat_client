@@ -88,10 +88,11 @@
     min-height: 15px;
 }
 .input-element-line-break{
-    height: 0px;
+    height: 1px;
     background-color: rgb(42, 218, 209);
     width: 100%;
     pointer-events: none;
+    user-select: none;
 }
 .input-element-emote {
     background-color: red;
@@ -100,6 +101,7 @@
     width: 22px;
     max-width: 25px;
     padding: 0;
+    pointer-events: none;
 }
 .input-emote-pic {
     position:relative;
@@ -109,11 +111,14 @@
     margin-bottom: 0px;
     max-height: 18px;
     max-width: 18px;
+    pointer-events: none;
     cursor: pointer;
 }
 .input-part {
     padding: 2px 2px 2px 2px;
     background-color: rgb(48, 95, 17);
-    min-height: 1px;
+    min-height: xxx px;
     max-width: 100%;
+    word-wrap: break-word;
+    white-space: pre-wrap;
 }

@@ -13,11 +13,11 @@ const emotesList = {
         id: "3"
     }
 };
-export const pickEmote = (inputCollection, setInputCollection)=>{
+export const pickEmote = params =>{
      //e.target - id emote, src, etc
+     const {inputCollection, setInputCollection} = params;
      setInputCollection(() => {
-                            
-        const {selection, focus, elemHasIndex} = getSelectProperties("focusNode");
+        const {selection, focus, endPointSelection, elemHasIndex, index, textElemAnchorNode} = getSelectProperties();
         
         let newInputCollection;
         if (!elemHasIndex) {
@@ -33,12 +33,10 @@ export const pickEmote = (inputCollection, setInputCollection)=>{
             })
         }
 
-        const elemIndex = Number(elemHasIndex);
-        const caretPosition = selection?.anchorOffset;
-        const textElem = selection.anchorNode.textContent;
-        const firstPart = textElem.substring(0, caretPosition);
-        const secondPart = textElem.slice(caretPosition);
-        
+        const elemIndex = index;
+        const caretPosition = endPointSelection;
+        const firstPart = textElemAnchorNode?.substring(0, caretPosition);
+        const secondPart = textElemAnchorNode?.slice(caretPosition);
 
         if(caretPosition === 0 && elemIndex === 0){
             console.log("left (first input)")
@@ -64,7 +62,7 @@ export const pickEmote = (inputCollection, setInputCollection)=>{
             ]);
         }
         
-        if (elemIndex === inputCollection.length - 1 && caretPosition === textElem.length) {
+        if (elemIndex === inputCollection.length - 1 && caretPosition === textElemAnchorNode.length) {
             console.log("right (last input)")
             newInputCollection = ([
                 ...inputCollection,
@@ -73,7 +71,7 @@ export const pickEmote = (inputCollection, setInputCollection)=>{
             ]);
         }
 
-        if (elemIndex >= 0 && elemIndex < inputCollection.length - 1 && caretPosition === textElem.length) {
+        if (elemIndex >= 0 && elemIndex < inputCollection.length - 1 && caretPosition === textElemAnchorNode.length) {
             console.log("right (not last input)")
             newInputCollection = [
                 ...inputCollection.slice(0, elemIndex + 1),
@@ -83,7 +81,7 @@ export const pickEmote = (inputCollection, setInputCollection)=>{
             ];
         }
 
-        if (caretPosition > 0 && caretPosition < textElem.length) {
+        if (caretPosition > 0 && caretPosition < textElemAnchorNode.length) {
             console.log("between (all)")
             newInputCollection = [
                 ...inputCollection.slice(0, elemIndex),
@@ -91,6 +89,17 @@ export const pickEmote = (inputCollection, setInputCollection)=>{
                     { type: "emote" , index: 1, value: emotesList.bm.src },
                     { type: "text"  , index: 2, value: secondPart},
                 ...inputCollection.slice(elemIndex + 1, inputCollection.length)
+            ];
+        }
+        if(caretPosition === 0 && textElemAnchorNode.length === 0){
+            console.log("between emotes")
+            selection.anchorNode.textContent = "";
+            const newIndex = Number(selection.anchorNode.parentElement.dataset.index);
+            newInputCollection = [
+                ...inputCollection.slice(0, newIndex),
+                { type: "text",  index: 999, value: "" },
+                { type: "emote", index: 0, value: emotesList.tf.src },
+                ...inputCollection.slice(newIndex, inputCollection.length)
             ];
         }
         selection.removeAllRanges();

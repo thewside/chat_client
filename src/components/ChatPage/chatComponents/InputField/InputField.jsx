@@ -3,6 +3,11 @@ import { renderInputCollection } from "./renderInput";
 import { getSelectProperties } from "./getSelectProperties";
 import { useCallback } from "react";
 import { pickEmote } from "./pickEmote";
+import { selectAll, selectPart } from "./selectionOnClicks";
+import { сutTextMessage } from "./сutTextMessage";
+import { cutWithDeleteKey } from "./cutWithDeleteKey";
+import { rewrite } from "./rewrite";
+
 // const resize = e => {
 //     e.target.style.height = 'auto';
 //     e.target.style.height = e.target.scrollHeight + 'px';
@@ -28,26 +33,27 @@ export const InputField = () => {
     const getElementByIndex = index => inputContent.current?.childNodes[index]?.firstChild?.childNodes[0];
     
     const [inputCollection, setInputCollection] = useState([
-        { type: "text"        , index: 0, value: "123456789056222222222222222222222222222222222222222222222222222222222227890" },
+        { type: "text"        , index: 0, value: "1234567890562 222222222227890" },
         { type: "line-break"  , index: 1, value: "" },
         { type: "text"        , index: 2, value: "qwe" },
         { type: "emote"       , index: 3, value: emotesList.bm.src },
-        { type: "text"        , index: 4, value: "-uityi" },
-        { type: "emote"       , index: 5, value: emotesList.bm.src },
-        { type: "text"        , index: 6, value: "z" },
+        { type: "text"        , index: 4, value: "" },
+        { type: "emote"       , index: 5, value: "https://media.discordapp.net/attachments/922941561229160448/1003206634841067520/unknown.png?width=663&height=498" },
+        { type: "text"        , index: 6, value: "9" },
     ]);
     
     const [selectProperties, setSelectProperties] = useState({
-        selectedInput: null,
         indexAfterRemovalElement: 0,
         previousElemLength:       0,
         inputRange: [],
         indexRange: [],
+        previousContent: []
     });
 
     const stopRepeating = (startPointSelection, leftElemTextContent, e, key) => {
         //key === 17 || key === 67 || key === 16
         if(key === 13 ) return e.preventDefault();
+        
 
         //left right
         if(key === 39) {
@@ -64,44 +70,81 @@ export const InputField = () => {
         if(key < 37 && key > 90) return e.preventDefault()
     };
 
-
-
     useEffect(() => {
         const startSelectionIndex = selectProperties.indexAfterRemovalElement;
         const startSelectionElemLength = selectProperties.previousElemLength;
         const inputWhichShouldBeSelect = getElementByIndex(startSelectionIndex - 2);
         if(inputWhichShouldBeSelect){
             const range = document.createRange();
+            console.dir(inputWhichShouldBeSelect)
             range.setStart(inputWhichShouldBeSelect, startSelectionElemLength);
-            const sel = window.getSelection();
-            sel.removeAllRanges();
-            sel.addRange(range);
-            sel.removeAllRanges();
+            const selection = window.getSelection();
+            selection.removeAllRanges();
+            selection.addRange(range);
         }
 
-        const observer = new MutationObserver(mutationRecors => {
-            mutationRecors.forEach(elem => {
+        const observer = new MutationObserver(mutationRecords => {
+            
+            mutationRecords.forEach(elem => {
                 const type = elem.type;
-                const targetText = elem.target;
+                const {focusNodeIndex} = getSelectProperties();
                 if (type === "characterData" || type === "childList") {
-                    const { index } = getSelectProperties("focusNode");
-                    if (inputCollection[index]) {
+                    if (inputCollection[focusNodeIndex]) {
                         setInputCollection(() => {
-                            const inputText = targetText?.parentElement?.textContent;
-                            inputCollection[index].value = inputText
+                            const inputText = elem.target?.parentElement?.textContent;
+                            inputCollection[focusNodeIndex].value = inputText;
                             return inputCollection
-                        })
+                        });
+                        // setSelectProperties(prev => {
+                        //     const prevLength = prev?.previousContent?.length;
+                        //     if(typeof(prevLength) === 'undefined') return prev
+                        //     if (prevLength <= 10) {
+                        //         selectProperties.previousContent.push([inputCollection])
+                        //         return prev
+                        //     } else {
+                        //         return {
+                        //             ...prev,
+                        //             previousContent: []
+                        //         }
+                        //     }
+                        // });
+
+                    }
+                    if (elem.target?.parentElement?.textContent.length === 0) {
+                        inputCollection[focusNodeIndex].value = ""
+                    }
+                }
+
+                if(type === "childList"){
+                    console.log("cl")
+                    const firstNode = elem.target.childNodes[0];
+                    if(firstNode?.nodeName === "BR"){
+                        firstNode?.remove()
                     }
                 }
             })
-        });
 
+        });
         observer.observe(inputContent.current, {
             childList: true,
             subtree: true,
             characterData: true,
             attributes: true
         });
+        
+        setSelectProperties(prev => {
+            const prevLength = prev?.previousContent?.length;
+            if(typeof(prevLength) === 'undefined') return prev
+            if (prevLength <= 10) {
+                selectProperties.previousContent.push([inputCollection])
+                return prev
+            } else {
+                return {
+                    ...prev,
+                    previousContent: []
+                }
+            }
+        })
 
         return () => observer.disconnect();
 
@@ -113,26 +156,35 @@ export const InputField = () => {
     useEffect(()=>{
         // console.log(selectProperties.indexRange)
         // console.log(selectProperties.inputRange)
+        // console.log(selectProperties.selectedInput)
     }, [selectProperties]);
 
-    const selectHandler = useCallback(() => {
-        const { extentSelection, index, startPointSelection, endPointSelection } = getSelectProperties("anchorNode");
-        // if(startPointSelection === endPointSelection) return
-        const sortIndex = [index, extentSelection].sort((a, b) => a - b);
+    const selectHandler = useCallback(e => {
+        if(e?.target !== inputContent.current) return e.preventDefault();
+        const {
+            focusNodeIndex, 
+            anchorNodeIndex, 
+            startPointSelection, 
+            endPointSelection, 
+            inputElementContainer
+        } = getSelectProperties();
+
+        if(!inputElementContainer) return
+        const sortIndex = [anchorNodeIndex, focusNodeIndex].sort((a, b) => a - b);
         let sortRanges;
-        if (sortIndex[0] === index) {
+        if (sortIndex[0] === anchorNodeIndex) {
             sortRanges = [endPointSelection, startPointSelection];
         };
-        if (sortIndex[1] === index) {
+        if (sortIndex[1] === anchorNodeIndex) {
             sortRanges = [startPointSelection, endPointSelection];
         };
         setSelectProperties(prev => {
             return {
                 ...prev,
-                indexRange: sortIndex ,
-                inputRange: sortRanges
+                indexRange: sortIndex,
+                inputRange: sortRanges || [0, 0]
             }
-        })
+        });
     }, []);
 
 
@@ -143,330 +195,280 @@ export const InputField = () => {
 
     return (
         <div>
-            <div>
-                <img
-                    style={{width:"50px", height: "50px"}}
-                    onClick={e =>{
-                        pickEmote(inputCollection, setInputCollection); // create emote changer
-                    }}
-                    src={emotesList.bm.src}
-                    alt=""
-                ></img>
-                <div
-                    className="input-container"
-                    ref={inputContent}
-                    contentEditable={true}
-                    suppressContentEditableWarning={true}
-                    onFocus={e => e.preventDefault()}
-                    onBlur={e => e.preventDefault()}
-                    onSelect={ e =>{
-                        if(e.nativeEvent.which === 1) return e.preventDefault()
-                        selectHandler()
-                    }}
-                    onKeyDown={e => {
-                        const {selection, index, textElem, elemHasIndex, startPointSelection, endPointSelection} = getSelectProperties("focusNode");
-                        const leftIndex  = selectProperties.indexRange[0];
-                        const rightIndex = selectProperties.indexRange[1];
-                        const rangePositionLeft  = selectProperties?.inputRange[0];
-                        const rangePositionRight = selectProperties?.inputRange[1];
-                        const leftElemTextContent = getElementByIndex(leftIndex);
-                        const indexElement = index;
-                        const focusElemLength = textElem?.length;
-                        const rightElemTextContent = getElementByIndex(rightIndex);
+            <img
+                style={{ width: "50px", height: "50px" }}
+                onMouseUp={e => {
+                    pickEmote({ inputCollection, setInputCollection });
+                }}
+                src={emotesList.bm.src}
+                alt=""
+            ></img>
+            <div
+                className="input-container"
+                ref={inputContent}
+                contentEditable={true}
+                suppressContentEditableWarning={true}
+                onFocus={e => e.preventDefault()}
+                onBlur={e => e.preventDefault()}
+                onKeyDown={e => {
+                    if (e.target !== inputContent.current) {
+                        e.preventDefault()
+                        return 
+                    }
+                    const {
+                        selection,
+                        index,
+                        focusNode,
+                        anchorNode,
+                        textElemFocusNode,
+                        elemHasIndex,
+                        startPointSelection,
+                        endPointSelection,
+                        focusNodeIndex,
+                        anchorNodeIndex
+                    } = getSelectProperties();
 
-                        if(e.repeat) {
-                            return stopRepeating(startPointSelection, leftElemTextContent, e, e.keyCode)
-                        }
+                    const [leftIndex, rightIndex] = selectProperties.indexRange;
+                    const [rangePositionLeft, rangePositionRight] = selectProperties.inputRange;
+                    const focusElemLength = textElemFocusNode?.length;
 
-                        if(e.ctrlKey && e.keyCode === 90) {
-                            return e.preventDefault()
-                        }
+                    const leftElemTextContent = getElementByIndex(leftIndex);
+                    const rightElemTextContent = getElementByIndex(rightIndex);
+                    const editParams = {
+                        e,
+                        selection,
+                        focusNode,
+                        anchorNode,
+                        leftIndex,
+                        rightIndex,
+                        rangePositionLeft,
+                        rangePositionRight,
+                        inputCollection,
+                        textElemFocusNode,
+                        focusElemLength,
+                        startPointSelection,
+                        endPointSelection,
+                        leftElemTextContent,
+                        rightElemTextContent,
+                        focusNodeIndex,
+                        anchorNodeIndex,
+                        selectProperties,
+                        getSelectProperties,
+                        setSelectProperties,
+                        setInputCollection,
+                        getElementByIndex
+                    }
+                    rewrite(editParams)
+                    // if(e.repeat) {
+                    //     return stopRepeating(startPointSelection, leftElemTextContent, e, e.keyCode)
+                    // }
 
-                        if(e.shiftKey && e.key === "Enter") {
-                            e.preventDefault()
-                            setInputCollection(() => {
-                                let newInputCollection = inputCollection;
-                                const elemIndex = Number(elemHasIndex)
-                                if (isNaN(elemIndex)) return newInputCollection
-                                const firstPart = textElem.substring(0, startPointSelection);
-                                const secondPart = textElem.slice(startPointSelection);
+                    //CTRL + Z
+                    // if(e.ctrlKey && e.keyCode === 90) {
+                    //     e.preventDefault()
+                    //     console.log(selectProperties.previousContent)
+                    //     const length = selectProperties.previousContent.length - 2;
+                    //     const lastElem = length < 0 ? 0 : length;
+                    //     const prevElement = selectProperties.previousContent[lastElem]?.[0];
+                    //     if(!prevElement) return
+                    //     setInputCollection(prev=>{
+                    //         // if(!prevElement) return prev
+                    //         return [...prevElement]
+                    //     })
+                    //     setSelectProperties(prev =>{
+                    //         prev.previousContent.pop();
+                    //         prev.previousContent.pop();
+                    //         return {
+                    //             ...prev,
+                    //             previousContent:  prev.previousContent
+                    //         }
+                    //     })
+                    // }
 
-                                if (startPointSelection > 0 && startPointSelection < textElem.length) {
-                                    console.log("between (all)")
-                                    newInputCollection = [
-                                        ...inputCollection.slice(0, elemIndex),
-                                            { type: "text"      , index: 0, value: firstPart},
-                                            { type: "line-break", index: 1, value: ""},
-                                            { type: "text"      , index: 2, value: secondPart},
-                                        ...inputCollection.slice(elemIndex + 1, inputCollection.length)
-                                    ];
-                                }
+                    // if(e.shiftKey && e.key === "Enter") {
+                    //     e.preventDefault()
+                    //     setInputCollection(() => {
+                    //         let newInputCollection = inputCollection;
+                    //         const elemIndex = Number(elemHasIndex)
+                    //         if (isNaN(elemIndex)) return newInputCollection
+                    //         const firstPart = textElemFocusNode.substring(0, startPointSelection);
+                    //         const secondPart = textElemFocusNode.slice(startPointSelection);
 
-                                if(startPointSelection === textElem.length && elemIndex === inputCollection.length - 1) {
-                                    console.log("right (last input)")
-                                    newInputCollection = [...inputCollection,
-                                        { type: "line-break" , index: 0, value: emotesList.bm.src },
-                                        { type: "text"  , index: 1, value: ""}
-                                    ]
-                                }
+                    //         if (startPointSelection > 0 && startPointSelection < textElemFocusNode.length) {
+                    //             console.log("between (all)")
+                    //             newInputCollection = [
+                    //                 ...inputCollection.slice(0, elemIndex),
+                    //                     { type: "text"      , index: 0, value: firstPart},
+                    //                     { type: "line-break", index: 1, value: ""},
+                    //                     { type: "text"      , index: 2, value: secondPart},
+                    //                 ...inputCollection.slice(elemIndex + 1, inputCollection.length)
+                    //             ];
+                    //         }
 
-                                if(startPointSelection === 0 && elemIndex === 0){
-                                    console.log("left (first input)")
-                                    e.preventDefault();
-                                    newInputCollection= ([
-                                        ...inputCollection.slice(0, elemIndex),
-                                            { type: "text"  , index: 0, value: ""},
-                                            { type: "line-break" , index: 1, value: emotesList.bm.src  },
-                                            { type: "text"  , index: 2, value: secondPart},
-                                        ...inputCollection.slice(elemIndex + 1, inputCollection.length)
-                                    ]);
-                                }
-    
-                                if (startPointSelection === 0 && elemIndex > 0) {
-                                    console.log("left (not first input)")
-                                    selection.anchorNode.textContent = "";
-                                    newInputCollection = ([
-                                        ...inputCollection.slice(0, elemIndex),
-                                            { type: "text"        , index: 0, value: firstPart},
-                                            { type: "line-break"  , index: 0, value: ""},
-                                            { type: "text"        , index: 2, value: secondPart},
-                                        ...inputCollection.slice(elemIndex + 1, inputCollection.length)
-                                    ]);
-                                }
-    
-                                if (elemIndex >= 0 && elemIndex < inputCollection.length - 1 && startPointSelection === textElem.length) {
-                                    console.log("right (not last input)")
-                                    newInputCollection = [
-                                        ...inputCollection.slice(0, elemIndex + 1),
-                                        { type: "line-break"  , index: 0, value: ""},
-                                        { type: "text"        , index: 2, value: ""},
-                                        ...inputCollection.slice(elemIndex + 1, inputCollection.length)
-                                    ];
-                                }
-    
-                                selection.removeAllRanges();
-                                const result = newInputCollection.map((elem, newIndex) => {
-                                    const { type, value } = elem;
-                                    return { type: type, index: newIndex, value: value };
-                                })
-                                return [...result]
-                            });
-                            return
-                        }
-                        if(e.key === "ArrowLeft" || e.key === "ArrowUp"|| e.key === "ArrowDown") {
-                            if(startPointSelection === 0) {
-                                e.preventDefault();
-                            }
-                        }
-                        if(e.key === "ArrowRight" || e.key === "ArrowUp"|| e.key === "ArrowDown") {
-                            if(startPointSelection === leftElemTextContent.length) {
-                                e.preventDefault();
-                            }
-                        }
-                        if (e.key === "Backspace") {
-                            console.log(leftIndex)
-                            console.log(rightIndex)
-                            console.log(rangePositionLeft)
-                            console.log(rangePositionRight)
+                    //         if(startPointSelection === textElemFocusNode.length && elemIndex === inputCollection.length - 1) {
+                    //             console.log("right (last input)")
+                    //             newInputCollection = [...inputCollection,
+                    //                 { type: "line-break" , index: 0, value: emotesList.bm.src },
+                    //                 { type: "text"  , index: 1, value: ""}
+                    //             ]
+                    //         }
 
-                            if(leftIndex === 0 && rightIndex === 0 && 
-                                rangePositionLeft === 0 && rangePositionRight === 0){
-                                   e.preventDefault()
-                            }
+                    //         if(startPointSelection === 0 && elemIndex === 0){
+                    //             console.log("left (first input)")
+                    //             e.preventDefault();
+                    //             newInputCollection= ([
+                    //                 ...inputCollection.slice(0, elemIndex),
+                    //                     { type: "text"  , index: 0, value: ""},
+                    //                     { type: "line-break" , index: 1, value: emotesList.bm.src  },
+                    //                     { type: "text"  , index: 2, value: secondPart},
+                    //                 ...inputCollection.slice(elemIndex + 1, inputCollection.length)
+                    //             ]);
+                    //         }
 
-                            // if(leftIndex === inputCollection.length && rightIndex === inputCollection.length && 
-                            //     rangePositionLeft === leftElemTextContent.textContent.length && rangePositionRight === rightElemTextContent.textContent.length){
-                            //        e.preventDefault()
-                            // }
+                    //         if (startPointSelection === 0 && elemIndex > 0) {
+                    //             console.log("left (not first input)")
+                    //             selection.anchorNode.textContent = "";
+                    //             newInputCollection = ([
+                    //                 ...inputCollection.slice(0, elemIndex),
+                    //                     { type: "text"        , index: 0, value: firstPart},
+                    //                     { type: "line-break"  , index: 0, value: ""},
+                    //                     { type: "text"        , index: 2, value: secondPart},
+                    //                 ...inputCollection.slice(elemIndex + 1, inputCollection.length)
+                    //             ]);
+                    //         }
 
-                            if(leftIndex > 0 && rightIndex > 0 && 
-                                rangePositionLeft === 0 && rangePositionRight === 0){
-                                    e.preventDefault();
-                                    console.log("del from right side")
-                                    setInputCollection(() => {
-                                        let result = inputCollection
-                                        inputCollection.splice(indexElement - 1, 2)
-                                        result = inputCollection.map((element, newIndex) => {
-                                            const { type, index, value } = element;
-                                            if (indexElement - 2 === index) {
-                                                return { type: type, index: newIndex, value: value + " " + textElem }
-                                            }
-                                            return { type: type, index: newIndex, value: value };
-                                        })
-                                        return [...result]
-                                    })
-                                    const {index} = getSelectProperties("focusNode");
-                                    const previousElem = getElementByIndex(index - 2);
-                                    setSelectProperties(prev=>{
-                                        return {
-                                            ...prev,
-                                            indexAfterRemovalElement: index,            // || 0,
-                                            previousElemLength: previousElem?.length    // || 0
-                                        }
-                                    })
-                            }
-                            if(inputCollection.length === 1 && focusElemLength === 0) {
-                                setInputCollection(()=>{
-                                    inputCollection[0].value = ""
-                                    return [...inputCollection]
-                                })
-                            };
+                    //         if (elemIndex >= 0 && elemIndex < inputCollection.length - 1 && startPointSelection === textElemFocusNode.length) {
+                    //             console.log("right (not last input)")
+                    //             newInputCollection = [
+                    //                 ...inputCollection.slice(0, elemIndex + 1),
+                    //                 { type: "line-break"  , index: 0, value: ""},
+                    //                 { type: "text"        , index: 2, value: ""},
+                    //                 ...inputCollection.slice(elemIndex + 1, inputCollection.length)
+                    //             ];
+                    //         }
 
-                            if(startPointSelection === 0 && leftIndex !== rightIndex) {
-                                e.preventDefault();
-                                console.log("del qwe");
-                                setInputCollection(() => {
-                                    let result = inputCollection
-                                    inputCollection.splice(indexElement - 1, 2)
-                                    result = inputCollection.map((element, newIndex) => {
-                                        const { type, index, value } = element;
-                                        if (indexElement - 2 === index) {
-                                            return { type: type, index: newIndex, value: value + " " + textElem }
-                                        }
-                                        return { type: type, index: newIndex, value: value };
-                                    })
-                                    return [...result]
-                                })
-                                const {index} = getSelectProperties("focusNode");
-                                const previousElem = getElementByIndex(index - 2);
-                                setSelectProperties(prev=>{
-                                    return {
-                                        ...prev,
-                                        indexAfterRemovalElement: index,            // || 0,
-                                        previousElemLength: previousElem?.length    // || 0
-                                    }
-                                })
-                            }
+                    //         selection.removeAllRanges();
+                    //         const result = newInputCollection.map((elem, newIndex) => {
+                    //             const { type, value } = elem;
+                    //             return { type: type, index: newIndex, value: value };
+                    //         })
+                    //         return [...result]
+                    //     });
+                    //     return
+                    // }
+                    if (e.key === "Backspace") {
+                        сutTextMessage(editParams)
+                    }
 
-                            if(leftIndex !== rightIndex){
-                                e.preventDefault();
-                                const newContent = leftElemTextContent?.textContent.slice(0, rangePositionLeft) + 
-                                rightElemTextContent?.textContent.slice(rangePositionRight, rightElemTextContent.textContent.length);
-                                setInputCollection(() => {
-                                    let result = inputCollection;
-                                    result = [
-                                        ...inputCollection.slice(0, leftIndex),
-                                            { type: "text", index: 0, value: newContent},
-                                        ...inputCollection.slice(rightIndex + 1, inputCollection.length)
-                                    ]
-                                    return [...result].map((e,newIndex)=>{
-                                        const { type, value} = e;
-                                        return { type: type, index: newIndex, value: value}
-                                    })
-                                })
-                                selection.removeAllRanges();
-                            }
-                            if(leftIndex === rightIndex && rangePositionLeft === 0 && rangePositionRight === rightElemTextContent.length){
-                                e.preventDefault();
-                                console.log("select all on element (right to left)")
-                                console.log(leftIndex, "leftindex")
-
-                                // inputSelected.current = true;
-                                
-                                // const rightElemTextContent = getElementByIndex(rightIndex + 2);
-                                // const newContent = leftElemTextContent.textContent + rightElemTextContent?.textContent;
-                                // setInputCollection(() => {
-                                //     let result = inputCollection;
-                                //     result = [
-                                //         ...inputCollection.slice(0, leftIndex + 1),
-                                //             { type: "text", index: 0, value: rightElemTextContent.textContent || ""},
-                                //         ...inputCollection.slice(rightIndex + 3, inputCollection.length)
-                                //     ]
-                                //     return [...result].map((e,newIndex)=>{
-                                //         const { type, value} = e;
-                                //         return { type: type, index: newIndex, value: value}
-                                //     })
-                                // })
-                                setInputCollection(() => {
-                                    let result = inputCollection;
-                                    result = [
-                                        ...inputCollection.slice(0, leftIndex),
-                                            { type: "text", index: 0, value: ""},
-                                        ...inputCollection.slice(rightIndex + 1, inputCollection.length)
-                                    ]
-                                    return [...result]
-                                    // .map((e,newIndex)=>{
-                                    //     const { type, value} = e;
-                                    //     return { type: type, index: newIndex, value: value}
-                                    // })
-                                })
-                                selection.removeAllRanges();
-                            }
-                        }
-                        
-                        if(e.key === "Enter"){
-                            e.preventDefault()
-                            console.log(inputCollection);
-                            return
-                        }
-                    }}
-
-                    onClick={e => {
-                        const datasetType = e.target.dataset.type || e.target.parentElement.dataset.type;
-                        if (datasetType === "emote") {
-                            e.preventDefault();
-                            return
-                        }
-                        const { index } = getSelectProperties("focusNode")
-                        if (selectProperties.selectedInput !== index) {
-                            console.log("yes")
-                            setSelectProperties(() => {
-                                return {
-                                    ...selectProperties,
-                                    selectedInput: null
-                                }
-                            })
-                        }
-                    }}
-
-                    onDoubleClick={e=>{
+                    if (e.keyCode === 46) {
+                        cutWithDeleteKey(editParams)
+                    }
+                    if (e.keyCode === 67) {
+                        e.preventDefault()
+                    }
+                    if (e.keyCode === 13) {
                         e.preventDefault();
-                        const datasetType = e.target.dataset.type || e.target.parentElement.dataset.type;
-                        if(datasetType === "emote") {
-                            e.preventDefault();
-                            return
-                        }
-                        const firstIndex = selectProperties.indexRange[0];
-                        const firstElem = getElementByIndex(0);
-                        const leftElem = getElementByIndex(firstIndex);
-                        const lastElem = getElementByIndex(inputCollection.length - 1);
-                        const range = new Range();
-                        const {selection, index} = getSelectProperties("focusNode")
 
-                        console.log(selectProperties.selectedInput);
-                        console.log(index);
+                        console.log(inputCollection);
+                        // console.log(leftIndex, "left selection index position")  // selection index position
+                        // console.log(rightIndex,"right selection index position")
+                        // console.log(rangePositionLeft,"left selection symbol position") // selection symbol position
+                        // console.log(rangePositionRight,"right selection symbol position")
 
-                        if (selectProperties.selectedInput === index &&
-                            selection.focusOffset === leftElem.textContent.length) {
+                        // setInputCollection(prev => {
+                        //     return [...prev]
+                        // })
 
-                            selection.removeAllRanges();
-                            range.setStart(firstElem, 0);
-                            range.setEnd(lastElem, lastElem.textContent.length);
-                            selection.addRange(range);
-                            console.log("double click select all ");
-                            return
-                        };
-                        
-                        if (selection.focusOffset === leftElem.textContent.length) {
+                        return
+                    }
+                }}
 
-                            selection.removeAllRanges();
-                            range.setStart(leftElem, 0);
-                            range.setEnd(leftElem, leftElem.textContent.length);
-                            selection.addRange(range);
-                            console.log("double click select part")
-                                
-                            setSelectProperties(()=>{
-                                return {...selectProperties,
-                                    selectedInput: index
-                                }
-                            })
-                            
-                            return
-                        }
-                    }}
-                >
-                    {resultInput}
-                </div>
+                onCut={e => {
+                    const {
+                        selection,
+                        index,
+                        focusNode,
+                        anchorNode,
+                        textElemFocusNode,
+                        elemHasIndex,
+                        startPointSelection,
+                        endPointSelection,
+                        focusNodeIndex,
+                        anchorNodeIndex
+                    } = getSelectProperties();
+                    console.log(focusNode)
+                    if (e.target !== inputContent.current || !focusNode) {
+                        e.preventDefault()
+                        return
+                    }
+
+                    const [leftIndex, rightIndex] = selectProperties.indexRange;
+                    const [rangePositionLeft, rangePositionRight] = selectProperties.inputRange;
+                    const focusElemLength = textElemFocusNode?.length;
+
+                    const leftElemTextContent = getElementByIndex(leftIndex);
+                    const rightElemTextContent = getElementByIndex(rightIndex);
+                    const editParams = {
+                        e,
+                        selection,
+                        focusNode,
+                        anchorNode,
+                        leftIndex,
+                        rightIndex,
+                        rangePositionLeft,
+                        rangePositionRight,
+                        inputCollection,
+                        textElemFocusNode,
+                        focusElemLength,
+                        startPointSelection,
+                        endPointSelection,
+                        leftElemTextContent,
+                        rightElemTextContent,
+                        focusNodeIndex,
+                        anchorNodeIndex,
+                        selectProperties,
+                        getSelectProperties,
+                        setSelectProperties,
+                        setInputCollection,
+                        getElementByIndex
+                    }
+                    сutTextMessage(editParams)
+                    console.log("cut")
+                }}
+                onPaste={() => {
+                    console.log("paste")
+                }}
+
+                onSelect={e => {
+                    e.preventDefault()
+                    if (e.nativeEvent.which === 1) {
+                        e.preventDefault()
+                        return
+                    }
+                    selectHandler(e)
+                }}
+
+                onMouseDown={e => {
+                    if (e.button === 2) {
+                        e.preventDefault();
+                        return
+                    }
+                    if (e.detail === 1) {
+                        const { selection } = getSelectProperties();
+                        selection.removeAllRanges();
+                    }
+                    if (e.detail === 3) {
+                        selectPart();
+                    }
+                    if (e.detail === 4) {
+                        selectAll({ getElementByIndex, inputCollection });
+                    }
+                    if (e.detail > 2) {
+                        e.preventDefault();
+                    }
+                }}
+            >
+                {resultInput}
             </div>
         </div>
     )
