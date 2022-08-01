@@ -7,6 +7,7 @@ import { selectAll, selectPart } from "./selectionOnClicks";
 import { сutTextMessage } from "./сutTextMessage";
 import { cutWithDeleteKey } from "./cutWithDeleteKey";
 import { rewrite } from "./rewrite";
+import { addLinebreak } from "./addLineBreak";
 
 // const resize = e => {
 //     e.target.style.height = 'auto';
@@ -41,7 +42,8 @@ export const InputField = () => {
         { type: "emote"       , index: 5, value: "https://media.discordapp.net/attachments/922941561229160448/1003206634841067520/unknown.png?width=663&height=498" },
         { type: "text"        , index: 6, value: "9" },
     ]);
-    
+
+    const [buffer, setBuffer] = useState([]);
     const [selectProperties, setSelectProperties] = useState({
         indexAfterRemovalElement: 0,
         previousElemLength:       0,
@@ -198,7 +200,50 @@ export const InputField = () => {
             <img
                 style={{ width: "50px", height: "50px" }}
                 onMouseUp={e => {
-                    pickEmote({ inputCollection, setInputCollection });
+                    const {
+                        selection,
+                        index,
+                        focusNode,
+                        anchorNode,
+                        textElemFocusNode,
+                        elemHasIndex,
+                        startPointSelection,
+                        endPointSelection,
+                        focusNodeIndex,
+                        anchorNodeIndex
+                    } = getSelectProperties();
+
+                    const [leftIndex, rightIndex] = selectProperties.indexRange;
+                    const [rangePositionLeft, rangePositionRight] = selectProperties.inputRange;
+                    const focusElemLength = textElemFocusNode?.length;
+
+                    const leftElemTextContent = getElementByIndex(leftIndex);
+                    const rightElemTextContent = getElementByIndex(rightIndex);
+                    const editParams = {
+                        e,
+                        selection,
+                        focusNode,
+                        anchorNode,
+                        leftIndex,
+                        rightIndex,
+                        rangePositionLeft,
+                        rangePositionRight,
+                        inputCollection,
+                        textElemFocusNode,
+                        focusElemLength,
+                        startPointSelection,
+                        endPointSelection,
+                        leftElemTextContent,
+                        rightElemTextContent,
+                        focusNodeIndex,
+                        anchorNodeIndex,
+                        selectProperties,
+                        getSelectProperties,
+                        setSelectProperties,
+                        setInputCollection,
+                        getElementByIndex
+                    };
+                    pickEmote(editParams);
                 }}
                 src={emotesList.bm.src}
                 alt=""
@@ -257,118 +302,55 @@ export const InputField = () => {
                         setSelectProperties,
                         setInputCollection,
                         getElementByIndex
+                    };
+                    console.log(e.key)
+                    console.log( e.keyCode)
+                    if (e.ctrlKey && e.keyCode === 67) {
+                        console.log("ctrl c")
+                        e.preventDefault();
+                        return
                     }
-                    rewrite(editParams)
-                    // if(e.repeat) {
-                    //     return stopRepeating(startPointSelection, leftElemTextContent, e, e.keyCode)
-                    // }
 
                     //CTRL + Z
-                    // if(e.ctrlKey && e.keyCode === 90) {
-                    //     e.preventDefault()
-                    //     console.log(selectProperties.previousContent)
-                    //     const length = selectProperties.previousContent.length - 2;
-                    //     const lastElem = length < 0 ? 0 : length;
-                    //     const prevElement = selectProperties.previousContent[lastElem]?.[0];
-                    //     if(!prevElement) return
-                    //     setInputCollection(prev=>{
-                    //         // if(!prevElement) return prev
-                    //         return [...prevElement]
-                    //     })
-                    //     setSelectProperties(prev =>{
-                    //         prev.previousContent.pop();
-                    //         prev.previousContent.pop();
-                    //         return {
-                    //             ...prev,
-                    //             previousContent:  prev.previousContent
-                    //         }
-                    //     })
-                    // }
+                    if(e.ctrlKey && e.keyCode === 90) {
+                        e.preventDefault()
+                        console.log(selectProperties.previousContent)
+                        const length = selectProperties.previousContent.length - 2;
+                        const lastElem = length < 0 ? 0 : length;
+                        const prevElement = selectProperties.previousContent[lastElem]?.[0];
+                        if(!prevElement) return
+                        setInputCollection(prev=>{
+                            // if(!prevElement) return prev
+                            return [...prevElement]
+                        })
+                        setSelectProperties(prev =>{
+                            prev.previousContent.pop();
+                            prev.previousContent.pop();
+                            return {
+                                ...prev,
+                                previousContent:  prev.previousContent
+                            }
+                        })
+                        return
+                    }
 
-                    // if(e.shiftKey && e.key === "Enter") {
-                    //     e.preventDefault()
-                    //     setInputCollection(() => {
-                    //         let newInputCollection = inputCollection;
-                    //         const elemIndex = Number(elemHasIndex)
-                    //         if (isNaN(elemIndex)) return newInputCollection
-                    //         const firstPart = textElemFocusNode.substring(0, startPointSelection);
-                    //         const secondPart = textElemFocusNode.slice(startPointSelection);
-
-                    //         if (startPointSelection > 0 && startPointSelection < textElemFocusNode.length) {
-                    //             console.log("between (all)")
-                    //             newInputCollection = [
-                    //                 ...inputCollection.slice(0, elemIndex),
-                    //                     { type: "text"      , index: 0, value: firstPart},
-                    //                     { type: "line-break", index: 1, value: ""},
-                    //                     { type: "text"      , index: 2, value: secondPart},
-                    //                 ...inputCollection.slice(elemIndex + 1, inputCollection.length)
-                    //             ];
-                    //         }
-
-                    //         if(startPointSelection === textElemFocusNode.length && elemIndex === inputCollection.length - 1) {
-                    //             console.log("right (last input)")
-                    //             newInputCollection = [...inputCollection,
-                    //                 { type: "line-break" , index: 0, value: emotesList.bm.src },
-                    //                 { type: "text"  , index: 1, value: ""}
-                    //             ]
-                    //         }
-
-                    //         if(startPointSelection === 0 && elemIndex === 0){
-                    //             console.log("left (first input)")
-                    //             e.preventDefault();
-                    //             newInputCollection= ([
-                    //                 ...inputCollection.slice(0, elemIndex),
-                    //                     { type: "text"  , index: 0, value: ""},
-                    //                     { type: "line-break" , index: 1, value: emotesList.bm.src  },
-                    //                     { type: "text"  , index: 2, value: secondPart},
-                    //                 ...inputCollection.slice(elemIndex + 1, inputCollection.length)
-                    //             ]);
-                    //         }
-
-                    //         if (startPointSelection === 0 && elemIndex > 0) {
-                    //             console.log("left (not first input)")
-                    //             selection.anchorNode.textContent = "";
-                    //             newInputCollection = ([
-                    //                 ...inputCollection.slice(0, elemIndex),
-                    //                     { type: "text"        , index: 0, value: firstPart},
-                    //                     { type: "line-break"  , index: 0, value: ""},
-                    //                     { type: "text"        , index: 2, value: secondPart},
-                    //                 ...inputCollection.slice(elemIndex + 1, inputCollection.length)
-                    //             ]);
-                    //         }
-
-                    //         if (elemIndex >= 0 && elemIndex < inputCollection.length - 1 && startPointSelection === textElemFocusNode.length) {
-                    //             console.log("right (not last input)")
-                    //             newInputCollection = [
-                    //                 ...inputCollection.slice(0, elemIndex + 1),
-                    //                 { type: "line-break"  , index: 0, value: ""},
-                    //                 { type: "text"        , index: 2, value: ""},
-                    //                 ...inputCollection.slice(elemIndex + 1, inputCollection.length)
-                    //             ];
-                    //         }
-
-                    //         selection.removeAllRanges();
-                    //         const result = newInputCollection.map((elem, newIndex) => {
-                    //             const { type, value } = elem;
-                    //             return { type: type, index: newIndex, value: value };
-                    //         })
-                    //         return [...result]
-                    //     });
-                    //     return
-                    // }
-                    if (e.key === "Backspace") {
+                    if(e.shiftKey && e.keyCode === 13) {
+                        e.preventDefault()
+                        addLinebreak(editParams)
+                        return
+                    }
+                    if (e.keyCode === 8) {
                         сutTextMessage(editParams)
+                        return
                     }
 
                     if (e.keyCode === 46) {
                         cutWithDeleteKey(editParams)
+                        return
                     }
-                    if (e.keyCode === 67) {
-                        e.preventDefault()
-                    }
-                    if (e.keyCode === 13) {
-                        e.preventDefault();
 
+                    if ( e.keyCode === 13) {
+                        e.preventDefault();
                         console.log(inputCollection);
                         // console.log(leftIndex, "left selection index position")  // selection index position
                         // console.log(rightIndex,"right selection index position")
@@ -381,6 +363,8 @@ export const InputField = () => {
 
                         return
                     }
+                    
+                    rewrite(editParams);
                 }}
 
                 onCut={e => {
@@ -396,7 +380,6 @@ export const InputField = () => {
                         focusNodeIndex,
                         anchorNodeIndex
                     } = getSelectProperties();
-                    console.log(focusNode)
                     if (e.target !== inputContent.current || !focusNode) {
                         e.preventDefault()
                         return
@@ -437,6 +420,13 @@ export const InputField = () => {
                 }}
                 onPaste={() => {
                     console.log("paste")
+                }}
+                onCopy={e =>{
+                    // if (e.key === "Control" && e.keyCode === 67) {
+                        console.log("ctrl c")
+                        e.preventDefault();
+                        return
+                    // }
                 }}
 
                 onSelect={e => {

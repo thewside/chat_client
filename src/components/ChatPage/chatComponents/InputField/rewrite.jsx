@@ -27,6 +27,10 @@ export const rewrite = params => {
     if (e.keyCode > 0 && e.keyCode < 8){
         e.preventDefault();
         return
+    };
+    if(e.keyCode === 8 && focusElemLength === 0 ) {
+        e.preventDefault();
+        return
     }
     if (e.keyCode > 8 && e.keyCode < 32){
         e.preventDefault();
@@ -50,7 +54,7 @@ export const rewrite = params => {
             e.preventDefault();
             return
     }
-
+    let result = inputCollection;
     if(leftIndex !== rightIndex ){
         e.preventDefault();
         //left right more
@@ -58,7 +62,6 @@ export const rewrite = params => {
         const newContent = (leftElemTextContent?.textContent.slice(0, rangePositionLeft) || "") + e.key +
         (rightElemTextContent?.textContent.slice(rangePositionRight, rightElemTextContent?.textContent.length) || "");
         setInputCollection(() => {
-            let result = inputCollection;
             result = [
                 ...inputCollection.slice(0, leftIndex),
                     { type: "text", index: 0, value: newContent  },
@@ -83,8 +86,6 @@ export const rewrite = params => {
             }
         })
     }
-
-
 
     console.log(selection)
     console.log(inputCollection) // all array

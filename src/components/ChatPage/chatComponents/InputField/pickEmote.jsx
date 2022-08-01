@@ -13,107 +13,150 @@ const emotesList = {
         id: "3"
     }
 };
-export const pickEmote = params =>{
-     //e.target - id emote, src, etc
-     const {inputCollection, setInputCollection} = params;
-     setInputCollection(() => {
-        const {selection, focus, endPointSelection, elemHasIndex, index, textElemAnchorNode} = getSelectProperties();
-        
-        let newInputCollection;
-        if (!elemHasIndex) {
+export const pickEmote = async (params) => {
+    //e.target - id emote, src, etc
+    const {
+        e,
+        selection,
+        focusNode,
+        leftIndex,
+        rightIndex,
+        rangePositionLeft,
+        rangePositionRight,
+        inputCollection,
+        elemHasIndex,
+
+        textElemFocusNode,
+        focusElemLength,
+
+        startPointSelection,
+        endPointSelection,
+        focusNodeIndex,
+
+        getSelectProperties,
+        getElementByIndex,
+
+        setSelectProperties,
+        setInputCollection,
+        selectProperties,
+    } = params;
+
+    let newInputCollection = inputCollection;
+    const leftElemTextContent = getElementByIndex(leftIndex);
+    const rightElemTextContent = getElementByIndex(rightIndex);
+     
+    if (endPointSelection === 0 && focusNodeIndex === 0) {
+        console.log("left (first input)")
+        await setInputCollection(prev => {
             newInputCollection = ([
-                ...inputCollection,
-                    { type: "emote" , index: 0, value: emotesList.bm.src },
-                    { type: "text"  , index: 1, value: ""},
+                ...inputCollection.slice(0, focusNodeIndex),
+                { type: "text", index: 0, value: "" },
+                { type: "emote", index: 1, value: emotesList.bm.src },
+                { type: "text", index: 2, value: (rightElemTextContent?.textContent.slice(rangePositionRight, rightElemTextContent?.textContent.length) || "") },
+                ...inputCollection.slice(focusNodeIndex + 1, inputCollection.length)
             ]);
-            selection.removeAllRanges();
-            return newInputCollection.map((element, newIndex) => {
+            
+            return [...newInputCollection].map((element, newIndex) => {
                 const { type, value } = element;
                 return { type: type, index: newIndex, value: value };
             })
-        }
-
-        const elemIndex = index;
-        const caretPosition = endPointSelection;
-        const firstPart = textElemAnchorNode?.substring(0, caretPosition);
-        const secondPart = textElemAnchorNode?.slice(caretPosition);
-
-        if(caretPosition === 0 && elemIndex === 0){
-            console.log("left (first input)")
-            selection.anchorNode.textContent = "";
-            newInputCollection= ([
-                ...inputCollection.slice(0, elemIndex),
-                    { type: "text"  , index: 0, value: ""},
-                    { type: "emote" , index: 1, value: emotesList.bm.src  },
-                    { type: "text"  , index: 2, value: secondPart},
-                ...inputCollection.slice(elemIndex + 1, inputCollection.length)
-            ]);
-        }
-
-        if (caretPosition === 0 && elemIndex > 0) {
-            console.log("left (not first input)")
-            selection.anchorNode.textContent = "";
+        })
+        
+        const firstElem = getElementByIndex(focusNodeIndex);
+        let text = firstElem?.textContent;
+        if(text) firstElem.textContent = "";
+        return
+    };
+    
+    if (endPointSelection === 0 && focusNodeIndex > 0) {
+        console.log("left (not first input)")
+        await setInputCollection(()=>{
             newInputCollection = ([
-                ...inputCollection.slice(0, elemIndex),
+                ...inputCollection.slice(0, focusNodeIndex),
                     { type: "text"  , index: 0, value: ""},
                     { type: "emote" , index: 1, value: emotesList.bm.src },
-                    { type: "text"  , index: 2, value: secondPart},
-                ...inputCollection.slice(elemIndex + 1, inputCollection.length)
+                    { type: "text"  , index: 2, value: (rightElemTextContent?.textContent.slice(rangePositionRight, rightElemTextContent?.textContent.length) || "")},
+                ...inputCollection.slice(focusNodeIndex + 1, inputCollection.length)
             ]);
-        }
-        
-        if (elemIndex === inputCollection.length - 1 && caretPosition === textElemAnchorNode.length) {
-            console.log("right (last input)")
+            return [...newInputCollection].map((element, newIndex) => {
+                const { type, value } = element;
+                return { type: type, index: newIndex, value: value };
+            })
+        })
+        const firstElem = getElementByIndex(focusNodeIndex);
+        let text = firstElem?.textContent;
+        if(text) firstElem.textContent = "";
+        return
+    }
+
+    if (focusNodeIndex === inputCollection.length - 1 && endPointSelection === textElemFocusNode?.length) {
+        console.log("right (last input)")
+        setInputCollection(() => {
             newInputCollection = ([
                 ...inputCollection,
-                    { type: "emote" , index: 0, value: emotesList.bm.src },
-                    { type: "text"  , index: 1, value: ""},
+                { type: "emote", index: 0, value: emotesList.bm.src },
+                { type: "text", index: 1, value: "" },
             ]);
-        }
+            return [...newInputCollection].map((element, newIndex) => {
+                const { type, value } = element;
+                return { type: type, index: newIndex, value: value };
+            });
+        });
+        return
+    }
 
-        if (elemIndex >= 0 && elemIndex < inputCollection.length - 1 && caretPosition === textElemAnchorNode.length) {
-            console.log("right (not last input)")
+    if (focusNodeIndex >= 0 && focusNodeIndex < inputCollection.length - 1 && endPointSelection === textElemFocusNode?.length) {
+        console.log("right (not last input)")
+        setInputCollection(() => {
             newInputCollection = [
-                ...inputCollection.slice(0, elemIndex + 1),
+                ...inputCollection.slice(0, focusNodeIndex + 1),
                 { type: "emote", index: 0, value: emotesList.tf.src },
-                { type: "text",  index: 999, value: "" },
-                ...inputCollection.slice(elemIndex + 1, inputCollection.length)
+                { type: "text", index: 999, value: "" },
+                ...inputCollection.slice(focusNodeIndex + 1, inputCollection.length)
             ];
-        }
+            return [...newInputCollection].map((element, newIndex) => {
+                const { type, value } = element;
+                return { type: type, index: newIndex, value: value };
+            });
+        });
+        return
+    }
 
-        if (caretPosition > 0 && caretPosition < textElemAnchorNode.length) {
-            console.log("between (all)")
+    if (endPointSelection > 0 && endPointSelection < textElemFocusNode?.length) {
+        console.log("between (all)")
+        setInputCollection(() => {
             newInputCollection = [
-                ...inputCollection.slice(0, elemIndex),
-                    { type: "text"  , index: 0, value: firstPart},
-                    { type: "emote" , index: 1, value: emotesList.bm.src },
-                    { type: "text"  , index: 2, value: secondPart},
-                ...inputCollection.slice(elemIndex + 1, inputCollection.length)
+                ...inputCollection.slice(0, focusNodeIndex),
+                { type: "text", index: 0, value: (leftElemTextContent?.textContent.slice(0, rangePositionLeft) || "") },
+                { type: "emote", index: 1, value: emotesList.bm.src },
+                { type: "text", index: 2, value: (rightElemTextContent?.textContent.slice(rangePositionRight, rightElemTextContent?.textContent.length) || "") },
+                ...inputCollection.slice(focusNodeIndex + 1, inputCollection.length)
             ];
-        }
-        if(caretPosition === 0 && textElemAnchorNode.length === 0){
-            console.log("between emotes")
-            selection.anchorNode.textContent = "";
+            return [...newInputCollection].map((element, newIndex) => {
+                const { type, value } = element;
+                return { type: type, index: newIndex, value: value };
+            });
+        });
+    }
+
+    if (endPointSelection === 0 && textElemFocusNode?.length === 0) {
+        console.log("between emotes")
+        setInputCollection(() => {
             const newIndex = Number(selection.anchorNode.parentElement.dataset.index);
             newInputCollection = [
                 ...inputCollection.slice(0, newIndex),
-                { type: "text",  index: 999, value: "" },
+                { type: "text", index: 999, value: "" },
                 { type: "emote", index: 0, value: emotesList.tf.src },
                 ...inputCollection.slice(newIndex, inputCollection.length)
             ];
-        }
-        selection.removeAllRanges();
-        const result = newInputCollection.map((elem, newIndex) => {
-            const { type, index, value } = elem;
-            if(index === 999){
-                const elemNode = focus?.parentElement?.parentElement;
-                const elemWithFakeText = elemNode?.nextElementSibling?.nextElementSibling;
-                if(!elemWithFakeText) return { type: type, index: newIndex, value: value }
-                const elemWithText = elemWithFakeText?.firstChild;
-                elemWithText.textContent = "";
-            }
-            return { type: type, index: newIndex, value: value };
+            return [...newInputCollection].map((element, newIndex) => {
+                const { type, value } = element;
+                return { type: type, index: newIndex, value: value };
+            });
         })
-        return [...result]
-    });
+        const firstElem = getElementByIndex(focusNodeIndex);
+        let text = firstElem?.textContent;
+        if (text) firstElem.textContent = "";
+        return
+    }
 }

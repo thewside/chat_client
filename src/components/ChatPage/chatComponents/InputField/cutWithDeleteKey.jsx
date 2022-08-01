@@ -22,6 +22,7 @@ export const cutWithDeleteKey = params => {
 
     const leftElemTextContent = getElementByIndex(leftIndex);
     const rightElemTextContent = getElementByIndex(rightIndex);
+    let result = inputCollection;
 
     //del every emote/linebreak element on last position
     if (leftIndex >= 0 && rightIndex >= 0 && rangePositionLeft === focusElemLength) {
@@ -32,7 +33,6 @@ export const cutWithDeleteKey = params => {
         setInputCollection(() => {
             // const rightElemTextContent = getElementByIndex(rightIndex + 2)?.textContent || "";
             const newContent = (prevElem?.textContent || "") + (nextElem?.textContent || "");
-            let result = inputCollection;
             result = [
                 ...inputCollection.slice(0, leftIndex),
                 { type: "text", index: 0, value: newContent},
@@ -59,10 +59,8 @@ export const cutWithDeleteKey = params => {
         console.log("delete empty before emote")
         const prevElem = getElementByIndex(focusNodeIndex);
         const nextElem = getElementByIndex(focusNodeIndex + 1);
-        console.log(prevElem)
-        console.log(nextElem)
+
         setInputCollection(() => {
-            let result = inputCollection;
             result = [
                 ...inputCollection.slice(0, focusNodeIndex),
                 ...inputCollection.slice(focusNodeIndex + 2, inputCollection.length)
@@ -81,7 +79,6 @@ export const cutWithDeleteKey = params => {
         (rightElemTextContent?.textContent.slice(rangePositionRight, rightElemTextContent?.textContent.length) || "");
         
         setInputCollection(() => {
-            let result = inputCollection;
             result = [
                 ...inputCollection.slice(0, leftIndex),
                     { type: "text", index: 0, value: newContent},
@@ -109,7 +106,6 @@ export const cutWithDeleteKey = params => {
         rangePositionRight === 0 && leftIndex !== rightIndex) {
         console.log("select right to left different ranges")
         setInputCollection(() => {
-            let result = inputCollection;
             const difference = rightIndex - leftIndex;
             const newValue = (leftElemTextContent?.textContent || "") + (rightElemTextContent?.textContent || "")
             result = [
@@ -124,7 +120,6 @@ export const cutWithDeleteKey = params => {
         })
         selection.removeAllRanges();
     };
-
 
     console.log(inputCollection) // all array
 
@@ -145,5 +140,4 @@ export const cutWithDeleteKey = params => {
 
     console.log(inputCollection.length , "inputCollection.length")
     console.log(focusElemLength, "focusElemLength")
-
 }

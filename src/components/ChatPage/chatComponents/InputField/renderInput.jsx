@@ -55,7 +55,7 @@ export const renderInputCollection = (inputCollection) => {
                         onKeyDown={e=>e.preventDefault()}
                         onSelect={e=>e.preventDefault()}
                     >
-                        {<br key={index + "br"}/>}
+                        {<span key={index + "line-braek"}/>}
                     </span>
                 </div>
         )}
