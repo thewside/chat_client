@@ -87,27 +87,27 @@ export const rewrite = params => {
         })
     }
 
-    console.log(selection)
-    console.log(inputCollection) // all array
+    // console.log(selection)
+    // console.log(inputCollection) // all array
     
-    console.log(focusNodeIndex , "focusNodeIndex")
-    console.log(anchorNodeIndex, "anchorNodeIndex")
+    // console.log(focusNodeIndex , "focusNodeIndex")
+    // console.log(anchorNodeIndex, "anchorNodeIndex")
 
-    console.log(leftIndex ,"leftIndex  left  sel index pos")  // selection index position
-    console.log(rightIndex,"rightIndex right sel index pos")
+    // console.log(leftIndex ,"leftIndex  left  sel index pos")  // selection index position
+    // console.log(rightIndex,"rightIndex right sel index pos")
 
-    console.log(rangePositionLeft, "rangePositionLeft  sel symb pos") // selection symbol position
-    console.log(rangePositionRight,"rangePositionRight sel symb pos")
+    // console.log(rangePositionLeft, "rangePositionLeft  sel symb pos") // selection symbol position
+    // console.log(rangePositionRight,"rangePositionRight sel symb pos")
 
-    console.log(textElemFocusNode, "textElemFocusNode")
-    console.log(focusElemLength, "focusElemLength")
+    // console.log(textElemFocusNode, "textElemFocusNode")
+    // console.log(focusElemLength, "focusElemLength")
 
-    console.log(leftElemTextContent, "leftElemTextContent")
-    console.log(rightElemTextContent, "rightElemTextContent")
+    // console.log(leftElemTextContent, "leftElemTextContent")
+    // console.log(rightElemTextContent, "rightElemTextContent")
     
-    console.log(startPointSelection, "startPointSelection")
-    console.log(endPointSelection, "endPointSelection")
+    // console.log(startPointSelection, "startPointSelection")
+    // console.log(endPointSelection, "endPointSelection")
 
-    console.log(inputCollection.length , "inputCollection.length")
+    // console.log(inputCollection.length , "inputCollection.length")
 
 }

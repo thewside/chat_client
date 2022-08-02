@@ -27,15 +27,12 @@ export const сutTextMessage = params => {
         return
     }
 
-
     const leftElemTextContent  = getElementByIndex(leftIndex);
-    const rightElemTextContent = getElementByIndex(rightIndex);
-
-    const leftElemTextContentFocusNode = getElementByIndex(focusNodeIndex);
-    const rightElemTextContentFocusNode = getElementByIndex(focusNodeIndex - 2);
+    const rightElemTextContent = getElementByIndex(rightIndex);;
+    let result = inputCollection;
     
     //del every emote/linebreak element on 0 position
-    if(focusNodeIndex > 0 && 
+    if( focusNodeIndex > 0 && 
         rangePositionLeft === 0 && 
         rangePositionRight === 0 &&
         focusElemLength > 0
@@ -43,7 +40,6 @@ export const сutTextMessage = params => {
             e.preventDefault();
             console.log("del before every emote/linebreak element")
             setInputCollection(() => {
-                let result = inputCollection;
                 inputCollection.splice(leftIndex - 1, 2)
                 result = inputCollection.map((element, newIndex) => {
                     const { type, index, value } = element;
@@ -66,10 +62,10 @@ export const сutTextMessage = params => {
             })
             selection.removeAllRanges();
     }
-    if(focusNodeIndex > 0 && focusElemLength === 0 && !textElemFocusNode) {
+
+    if(leftIndex === rightIndex && focusElemLength === 0 && startPointSelection === 0) {
         console.log("delete empty before emote")
         setInputCollection(() => {
-            let result = inputCollection;
             result = [
                 ...inputCollection.slice(0, focusNodeIndex - 1),
                 ...inputCollection.slice(focusNodeIndex + 1, inputCollection.length)
@@ -83,16 +79,30 @@ export const сutTextMessage = params => {
         selection.removeAllRanges();
     }
 
-    // if(rangePositionLeft === textElemFocusNode.length &&
-    //     rangePositionRight === 0 && leftIndex !== rightIndex) {
+    if(leftIndex === rightIndex && 
+        focusElemLength === 0 && 
+        startPointSelection === 1 && 
+        endPointSelection === 0
+        ) {
+        console.log("delete empty before emote with select")
+        setInputCollection(() => {
+            let result = inputCollection;
+            result = [
+                ...inputCollection.slice(0, focusNodeIndex),
+                ...inputCollection.slice(focusNodeIndex + 2, inputCollection.length)
+            ]
+            // // inputCollection.slice(0, focusNodeIndex - 1)
+            return [...result].map((e, newIndex) => {
+                const { type, value } = e;
+                return { type: type, index: newIndex, value: value }
+            })
+        })
+        selection.removeAllRanges();
+    }
 
     // difference indexes and between words
-    if(leftIndex !== rightIndex //&&
-    //    rangePositionLeft > 0 && 
-    //    rangePositionRight > 0 
-       ){
+    if(leftIndex !== rightIndex){
         e.preventDefault();
-        //left right more
         console.log("another index and between words")
         const newContent = (leftElemTextContent?.textContent.slice(0, rangePositionLeft) || "") + 
         (rightElemTextContent?.textContent.slice(rangePositionRight, rightElemTextContent?.textContent.length) || "");
@@ -120,82 +130,6 @@ export const сutTextMessage = params => {
             }
         })
     }
-
-
-
-    console.log(selection)
-    console.log(inputCollection) // all array
-    
-    console.log(focusNodeIndex , "focusNodeIndex")
-    console.log(anchorNodeIndex, "anchorNodeIndex")
-
-    console.log(leftIndex ,"leftIndex  left  sel index pos")  // selection index position
-    console.log(rightIndex,"rightIndex right sel index pos")
-
-    console.log(rangePositionLeft, "rangePositionLeft  sel symb pos") // selection symbol position
-    console.log(rangePositionRight,"rangePositionRight sel symb pos")
-
-    console.log(textElemFocusNode, "textElemFocusNode")
-    console.log(focusElemLength, "focusElemLength")
-
-    console.log(leftElemTextContent, "leftElemTextContent")
-    console.log(rightElemTextContent, "rightElemTextContent")
-    
-    console.log(startPointSelection, "startPointSelection")
-    console.log(endPointSelection, "endPointSelection")
-
-    console.log(inputCollection.length , "inputCollection.length")
-
-    // if( leftIndex === rightIndex && 
-    //     rangePositionLeft === rangePositionRight &&  
-    //     rightElemTextContent.tagName === "BR"){
-    //        e.preventDefault()
-    // }
-
-    // // if( leftIndex === inputCollection.length && 
-    // //     rightIndex === inputCollection.length && 
-    // //     rangePositionLeft === leftElemTextContent.textContent.length && 
-    // //     rangePositionRight === rightElemTextContent.textContent.length){
-    // //        e.preventDefault()
-    // // }
-
-    // //clear elem text when press if one symbol remains
-    // if(inputCollection.length === 1 && focusElemLength === 0) {
-    //     setInputCollection(()=>{
-    //         inputCollection[0].value = ""
-    //         return [...inputCollection]
-    //     })
-    // };
-
-   
-
-    // // ???
-    // if(startPointSelection === 0 && leftIndex !== rightIndex) {
-    //     e.preventDefault();
-    //     console.log("del qwe");
-    //     setInputCollection(() => {
-    //         let result = inputCollection
-    //         inputCollection.splice(indexElement - 1, 2)
-    //         result = inputCollection.map((element, newIndex) => {
-    //             const { type, index, value } = element;
-    //             if (indexElement - 2 === index) {
-    //                 return { type: type, index: newIndex, value: value + " " + textElemFocusNode }
-    //             }
-    //             return { type: type, index: newIndex, value: value };
-    //         })
-    //         return [...result]
-    //     })
-    //     const {index} = getSelectProperties();
-    //     const previousElem = getElementByIndex(index - 2);
-    //     setSelectProperties(prev=>{
-    //         return {
-    //             ...prev,
-    //             indexAfterRemovalElement: index,            // || 0,
-    //             previousElemLength: previousElem?.length    // || 0
-    //         }
-    //     })
-    // }
-    
 
     if(leftIndex === rightIndex && 
         rangePositionRight === 0 && 

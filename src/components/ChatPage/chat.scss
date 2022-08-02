@@ -69,7 +69,7 @@
 }
 .input-container {
     height: 100px;
-    background-color: black;
+    background-color: rgb(43, 43, 43);
     padding: 5px;
 }
 .input-element, .input-element-emote {
@@ -97,10 +97,12 @@
 .input-element-emote {
     background-color: red;
     max-height: 25px;
-    height: 24px;
-    width: 22px;
+    height: 23.3px;
+    width: 18px;
     max-width: 25px;
     padding: 0;
+    margin-left: 0px;
+    margin-right: 1px;
     pointer-events: none;
 }
 .input-emote-pic {
@@ -115,9 +117,9 @@
     cursor: pointer;
 }
 .input-part {
+    display: inline-block;
     padding: 2px 2px 2px 2px;
     background-color: rgb(48, 95, 17);
-    min-height: xxx px;
     max-width: 100%;
     word-wrap: break-word;
     white-space: pre-wrap;

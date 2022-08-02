@@ -19,7 +19,6 @@ export const renderInputCollection = (inputCollection) => {
                         contentEditable={true}
                         suppressContentEditableWarning={true}
                         onDrag={e=>e.preventDefault()}
-                        spellCheck={false}
                     >   
                         {value}
                     </span>
@@ -55,7 +54,8 @@ export const renderInputCollection = (inputCollection) => {
                         onKeyDown={e=>e.preventDefault()}
                         onSelect={e=>e.preventDefault()}
                     >
-                        {<span key={index + "line-braek"}/>}
+                    <span key={index + "line-break"}/>
+
                     </span>
                 </div>
         )}
@@ -72,17 +72,17 @@ export const renderInputCollection = (inputCollection) => {
                     contentEditable={false}
                     onFocus={e=>e.preventDefault()}
                     onKeyDown={e=>e.preventDefault()}
-                >
-                    <img
-                        tabIndex={-1}
-                        className="input-emote-pic"
-                        src={value}
-                        alt=""
-                        draggable={false}
-                        onMouseDown={e=>e.preventDefault()}
-                        onFocus={e=>e.preventDefault()}
-                        onKeyDown={e=>e.preventDefault()}
-                    />
+                >   
+                        <img
+                            tabIndex={-1}
+                            className="input-emote-pic"
+                            src={value}
+                            alt=""
+                            draggable={false}
+                            onMouseDown={e=>e.preventDefault()}
+                            onFocus={e=>e.preventDefault()}
+                            onKeyDown={e=>e.preventDefault()}
+                        />
                 </div>
             )
         }

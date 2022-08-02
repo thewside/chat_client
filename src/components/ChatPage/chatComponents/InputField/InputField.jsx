@@ -1,5 +1,5 @@
 import { useState, useEffect, useRef, useMemo } from "react";
-import { renderInputCollection } from "./renderInput";
+import { renderInputCollection } from "./renderInputCollection";
 import { getSelectProperties } from "./getSelectProperties";
 import { useCallback } from "react";
 import { pickEmote } from "./pickEmote";
@@ -73,17 +73,17 @@ export const InputField = () => {
     };
 
     useEffect(() => {
-        const startSelectionIndex = selectProperties.indexAfterRemovalElement;
-        const startSelectionElemLength = selectProperties.previousElemLength;
-        const inputWhichShouldBeSelect = getElementByIndex(startSelectionIndex - 2);
-        if(inputWhichShouldBeSelect){
-            const range = document.createRange();
-            console.dir(inputWhichShouldBeSelect)
-            range.setStart(inputWhichShouldBeSelect, startSelectionElemLength);
-            const selection = window.getSelection();
-            selection.removeAllRanges();
-            selection.addRange(range);
-        }
+        // const startSelectionIndex = selectProperties.indexAfterRemovalElement;
+        // const startSelectionElemLength = selectProperties.previousElemLength;
+        // const inputWhichShouldBeSelect = getElementByIndex(startSelectionIndex - 2);
+        // if(inputWhichShouldBeSelect){
+        //     const range = document.createRange();
+        //     console.dir(inputWhichShouldBeSelect)
+        //     range.setStart(inputWhichShouldBeSelect, startSelectionElemLength);
+        //     const selection = window.getSelection();
+        //     selection.removeAllRanges();
+        //     selection.addRange(range);
+        // }
 
         const observer = new MutationObserver(mutationRecords => {
             
@@ -162,7 +162,8 @@ export const InputField = () => {
     }, [selectProperties]);
 
     const selectHandler = useCallback(e => {
-        if(e?.target !== inputContent.current) return e.preventDefault();
+        // if(e?.target !== inputContent.current) return e.preventDefault();
+        //need fix mousedown only in textarea + mouseup everyvere
         const {
             focusNodeIndex, 
             anchorNodeIndex, 
@@ -174,12 +175,39 @@ export const InputField = () => {
         if(!inputElementContainer) return
         const sortIndex = [anchorNodeIndex, focusNodeIndex].sort((a, b) => a - b);
         let sortRanges;
-        if (sortIndex[0] === anchorNodeIndex) {
-            sortRanges = [endPointSelection, startPointSelection];
-        };
-        if (sortIndex[1] === anchorNodeIndex) {
-            sortRanges = [startPointSelection, endPointSelection];
-        };
+        let left = sortIndex[0];
+        let right = sortIndex[1];
+
+        const ifMouseUpOnEmote = () => {
+            
+            if (sortIndex[0] === anchorNodeIndex) {
+                sortRanges = [endPointSelection, startPointSelection];
+            };
+            if (sortIndex[1] === anchorNodeIndex) {
+                sortRanges = [startPointSelection, endPointSelection];
+            };
+
+            if(left) {
+                const type = inputCollection[left].type;
+                if(type === "emote") {
+                    console.log("emote left")
+                    sortIndex[0] += 1;
+                    sortRanges[0] = sortRanges[0] - 1 === -1 ? 0 : sortRanges[0] - 1;
+                }
+            }
+            if(right) {
+                const type = inputCollection[right].type;
+                if(type === "emote") {
+                    console.log("emote right")
+                    sortIndex[1] += 1;
+                }
+            };
+        }
+        ifMouseUpOnEmote();
+
+        console.log(sortIndex)
+        console.log(sortRanges)
+
         setSelectProperties(prev => {
             return {
                 ...prev,
@@ -191,6 +219,7 @@ export const InputField = () => {
 
 
     useEffect(()=>{
+        console.log("avl")
         window.addEventListener("mouseup", selectHandler);
         return () => window.removeEventListener("mouseup", selectHandler);
     }, [])
@@ -216,6 +245,7 @@ export const InputField = () => {
                     const [leftIndex, rightIndex] = selectProperties.indexRange;
                     const [rangePositionLeft, rangePositionRight] = selectProperties.inputRange;
                     const focusElemLength = textElemFocusNode?.length;
+                    console.log(selectProperties)
 
                     const leftElemTextContent = getElementByIndex(leftIndex);
                     const rightElemTextContent = getElementByIndex(rightIndex);
@@ -303,23 +333,16 @@ export const InputField = () => {
                         setInputCollection,
                         getElementByIndex
                     };
-                    console.log(e.key)
-                    console.log( e.keyCode)
-                    if (e.ctrlKey && e.keyCode === 67) {
-                        console.log("ctrl c")
-                        e.preventDefault();
-                        return
-                    }
 
-                    //CTRL + Z
                     if(e.ctrlKey && e.keyCode === 90) {
+                        console.log("ctrl z")
                         e.preventDefault()
                         console.log(selectProperties.previousContent)
                         const length = selectProperties.previousContent.length - 2;
                         const lastElem = length < 0 ? 0 : length;
                         const prevElement = selectProperties.previousContent[lastElem]?.[0];
                         if(!prevElement) return
-                        setInputCollection(prev=>{
+                        setInputCollection(()=>{
                             // if(!prevElement) return prev
                             return [...prevElement]
                         })
@@ -335,22 +358,27 @@ export const InputField = () => {
                     }
 
                     if(e.shiftKey && e.keyCode === 13) {
+                        console.log("shift enter")
                         e.preventDefault()
                         addLinebreak(editParams)
                         return
                     }
                     if (e.keyCode === 8) {
+                        console.log("backspace")
                         сutTextMessage(editParams)
                         return
                     }
 
                     if (e.keyCode === 46) {
+                        console.log("delete")
+                        // e.preventDefault()
                         cutWithDeleteKey(editParams)
                         return
                     }
 
                     if ( e.keyCode === 13) {
                         e.preventDefault();
+                        console.log("enter")
                         console.log(inputCollection);
                         // console.log(leftIndex, "left selection index position")  // selection index position
                         // console.log(rightIndex,"right selection index position")
@@ -364,6 +392,19 @@ export const InputField = () => {
                         return
                     }
                     
+                    if (e.ctrlKey && e.keyCode === 67) {
+                        console.log("ctrl c")
+                        return
+                    }
+                    if (e.ctrlKey && e.keyCode === 86) {
+                        console.log("ctrl v")
+                        return
+                    }
+                    if (e.ctrlKey && e.keyCode === 88) {
+                        console.log("ctrl x")
+                        return
+                    }
+
                     rewrite(editParams);
                 }}
 
@@ -380,10 +421,10 @@ export const InputField = () => {
                         focusNodeIndex,
                         anchorNodeIndex
                     } = getSelectProperties();
-                    if (e.target !== inputContent.current || !focusNode) {
-                        e.preventDefault()
-                        return
-                    }
+                    // if (e.target !== inputContent.current || !focusNode) {
+                    //     e.preventDefault()
+                    //     return
+                    // }
 
                     const [leftIndex, rightIndex] = selectProperties.indexRange;
                     const [rangePositionLeft, rangePositionRight] = selectProperties.inputRange;
@@ -416,17 +457,14 @@ export const InputField = () => {
                         getElementByIndex
                     }
                     сutTextMessage(editParams)
-                    console.log("cut")
+                    console.log("ctrl x cut")
                 }}
                 onPaste={() => {
-                    console.log("paste")
+                    console.log("ctrl v paste")
                 }}
                 onCopy={e =>{
-                    // if (e.key === "Control" && e.keyCode === 67) {
-                        console.log("ctrl c")
+                        console.log("ctrl c oncopy")
                         e.preventDefault();
-                        return
-                    // }
                 }}
 
                 onSelect={e => {
